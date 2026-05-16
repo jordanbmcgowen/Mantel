@@ -233,52 +233,132 @@ function loadImageFromSrc(src) {
   });
 }
 
-// Composites the AI-styled result with the original drawing to achieve ~75%
-// structural consistency, then vectorizes the result to SVG so it scales to
-// large print sizes without grain.
-async function postProcess(originalDataURL, aiBase64) {
-  try {
-    const aiDataURL = 'data:image/png;base64,' + aiBase64;
-    const [aiImg, origImg] = await Promise.all([
-      loadImageFromSrc(aiDataURL),
-      loadImageFromSrc(originalDataURL),
-    ]);
+// Per-style interpretation profile. Models how loosely each artist would
+// re-imagine a child's drawing, then how to vectorize it for clean print
+// scaling. The AI output IS the design — we don't re-stamp the original
+// line on top, that would flatten every style toward the same outline.
+//
+//   aiStrength → forwarded to the img2img backend. Lower preserves more of
+//                the input; higher gives the model freer rein. Tuned to
+//                each artist's documented attitude to subject matter:
+//                  · Warhol screened a single photo; only color/registration
+//                    moved. Highest fidelity.
+//                  · Basquiat prized raw, child-like marks and overlaid on
+//                    them — keep the drawing largely intact.
+//                  · Hockney kept the figurative subject in flat pop palette.
+//                  · Picasso's Blue Period kept the figures, retuned the key.
+//                  · Klee inked the drawing on top of his watercolor mosaic.
+//                  · Matisse cut shapes from memory of form, not from line.
+//                  · Miró's constellations are dream-derived, not literal.
+//                  · Mondrian abandoned representation for the pure grid.
+//                  · Rothko obliterated subject entirely for atmosphere.
+//
+//   vec        → ImageTracer options. Painterly styles get higher blur and
+//                more colors so smooth fields don't fragment into speckly
+//                polygons; flat styles get aggressive path-omission so they
+//                read graphic.
+const STYLE_PROFILES = {
+  pure:     { aiStrength: null, vec: { numberofcolors: 24, colorquantcycles: 4, pathomit: 6,  ltres: 0.4, qtres: 0.4, blurradius: 1, blurdelta: 14 } },
+  warhol:   { aiStrength: 0.25, vec: { numberofcolors: 8,  colorquantcycles: 4, pathomit: 12, ltres: 0.8, qtres: 0.8, blurradius: 1, blurdelta: 14 } },
+  basquiat: { aiStrength: 0.30, vec: { numberofcolors: 28, colorquantcycles: 3, pathomit: 4,  ltres: 0.5, qtres: 0.5, blurradius: 1, blurdelta: 14 } },
+  hockney:  { aiStrength: 0.40, vec: { numberofcolors: 14, colorquantcycles: 4, pathomit: 10, ltres: 1.0, qtres: 1.0, blurradius: 2, blurdelta: 18 } },
+  picasso:  { aiStrength: 0.45, vec: { numberofcolors: 28, colorquantcycles: 4, pathomit: 6,  ltres: 0.6, qtres: 0.6, blurradius: 2, blurdelta: 18 } },
+  klee:     { aiStrength: 0.45, vec: { numberofcolors: 32, colorquantcycles: 4, pathomit: 6,  ltres: 0.5, qtres: 0.5, blurradius: 2, blurdelta: 18 } },
+  matisse:  { aiStrength: 0.55, vec: { numberofcolors: 10, colorquantcycles: 4, pathomit: 14, ltres: 1.2, qtres: 1.2, blurradius: 3, blurdelta: 20 } },
+  miro:     { aiStrength: 0.70, vec: { numberofcolors: 10, colorquantcycles: 4, pathomit: 12, ltres: 1.0, qtres: 1.0, blurradius: 2, blurdelta: 18 } },
+  mondrian: { aiStrength: 0.80, vec: { numberofcolors: 5,  colorquantcycles: 3, pathomit: 20, ltres: 2.0, qtres: 2.0, blurradius: 4, blurdelta: 24 } },
+  rothko:   { aiStrength: 0.85, vec: { numberofcolors: 48, colorquantcycles: 5, pathomit: 2,  ltres: 0.5, qtres: 0.5, blurradius: 5, blurdelta: 24 } },
+};
 
-    const canvas = document.createElement('canvas');
-    canvas.width  = aiImg.naturalWidth  || 512;
-    canvas.height = aiImg.naturalHeight || 512;
-    const ctx = canvas.getContext('2d');
+// Vectorize a raster (data URL) into a print-scalable SVG data URL.
+async function vectorizeRaster(dataURL, vecOpts) {
+  if (typeof ImageTracer === 'undefined') return dataURL;
+  return await new Promise((resolve) => {
+    ImageTracer.imageToSVG(
+      dataURL,
+      (svg) => resolve('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)),
+      vecOpts
+    );
+  });
+}
 
-    // Base: AI result supplies the artistic color palette (hue + saturation).
-    ctx.drawImage(aiImg, 0, 0, canvas.width, canvas.height);
+// Knock the paper out of a phone photo of a child's drawing. Samples the
+// edges to estimate the median paper color, then feather-makes pixels
+// within color-distance transparent. Anti-aliased strokes survive cleanly.
+async function removePaperBackground(dataURL) {
+  const img = await loadImageFromSrc(dataURL);
+  const w = img.naturalWidth || 1024;
+  const h = img.naturalHeight || 1024;
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, w, h);
 
-    // Overlay: original's luminosity at 75% opacity. The 'luminosity' blend
-    // mode transfers brightness/structure from the original onto the AI's
-    // color layer — reinforcing the original drawing's shapes while keeping
-    // the AI's artistic palette intact.
-    ctx.globalAlpha = 0.75;
-    ctx.globalCompositeOperation = 'luminosity';
-    ctx.drawImage(origImg, 0, 0, canvas.width, canvas.height);
-    ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = 'source-over';
+  const imageData = ctx.getImageData(0, 0, w, h);
+  const px = imageData.data;
 
-    const composited = canvas.toDataURL('image/png');
-
-    // Vectorize using ImageTracer for resolution-independent SVG output.
-    if (typeof ImageTracer !== 'undefined') {
-      return await new Promise((resolve) => {
-        ImageTracer.imageToSVG(
-          composited,
-          (svg) => resolve('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)),
-          { numberofcolors: 64, colorquantcycles: 3, pathomit: 4, ltres: 0.5, qtres: 0.5 }
-        );
-      });
+  const samples = [];
+  const stride = Math.max(2, Math.floor(Math.min(w, h) / 80));
+  const margin = Math.max(2, Math.floor(Math.min(w, h) * 0.025));
+  for (let x = 0; x < w; x += stride) {
+    for (const y of [margin, h - margin - 1]) {
+      const i = (y * w + x) * 4;
+      samples.push([px[i], px[i+1], px[i+2]]);
     }
+  }
+  for (let y = 0; y < h; y += stride) {
+    for (const x of [margin, w - margin - 1]) {
+      const i = (y * w + x) * 4;
+      samples.push([px[i], px[i+1], px[i+2]]);
+    }
+  }
+  const med = (ch) => {
+    const sorted = samples.map(s => s[ch]).sort((a, b) => a - b);
+    return sorted[Math.floor(sorted.length / 2)];
+  };
+  const paper = [med(0), med(1), med(2)];
+  const paperLum = 0.299 * paper[0] + 0.587 * paper[1] + 0.114 * paper[2];
 
-    return composited;
+  // tol: color distance within which a pixel reads as paper (covers paper
+  // grain, gentle warmth, slight shadow). soft: feather width for the edge
+  // of a stroke so it doesn't go jagged.
+  const tol = 52;
+  const soft = 22;
+  for (let i = 0; i < px.length; i += 4) {
+    const lum = 0.299 * px[i] + 0.587 * px[i+1] + 0.114 * px[i+2];
+    // A pixel clearly darker than the paper is a stroke — keep it.
+    if (lum < paperLum - 14) continue;
+    const dr = px[i]   - paper[0];
+    const dg = px[i+1] - paper[1];
+    const db = px[i+2] - paper[2];
+    const d = Math.sqrt(dr * dr + dg * dg + db * db);
+    if (d < tol) {
+      px[i+3] = 0;
+    } else if (d < tol + soft) {
+      px[i+3] = Math.round(px[i+3] * (d - tol) / soft);
+    }
+  }
+  ctx.putImageData(imageData, 0, 0);
+  return canvas.toDataURL('image/png');
+}
+
+// Final image for a given style. For "pure" we lift the original off the
+// paper and vectorize it — no AI interpretation, just print-ready scale.
+// For every other style the AI output is the design as the artist would
+// have made it; we vectorize that directly with the style's tuning.
+async function postProcess(originalDataURL, aiBase64, styleId) {
+  const profile = STYLE_PROFILES[styleId] || STYLE_PROFILES.matisse;
+  try {
+    if (styleId === "pure") {
+      const cleaned = await removePaperBackground(originalDataURL);
+      return await vectorizeRaster(cleaned, profile.vec);
+    }
+    if (!aiBase64) return null;
+    const aiDataURL = 'data:image/png;base64,' + aiBase64;
+    return await vectorizeRaster(aiDataURL, profile.vec);
   } catch (e) {
-    console.warn('Post-processing failed:', e);
-    return 'data:image/png;base64,' + aiBase64;
+    console.warn('Post-processing failed for', styleId, e);
+    return aiBase64 ? 'data:image/png;base64,' + aiBase64 : originalDataURL;
   }
 }
 
@@ -323,20 +403,36 @@ function Processing({ go, drawing, uploaded, setAiResults }) {
       for (let i = 0; i < STYLE_IDS.length; i++) {
         if (cancelled) return;
         const styleId = STYLE_IDS[i];
+        const profile = STYLE_PROFILES[styleId] || {};
+
+        // "pure" is rendered client-side — paper knockout + vectorize. No
+        // AI round-trip; the original drawing IS the design.
+        if (styleId === "pure") {
+          setStage(`Vectorizing style ${i + 1} of ${STYLE_IDS.length}: pure…`);
+          try {
+            results.pure = await postProcess(originalDataURL, null, "pure");
+          } catch (e) {
+            console.warn('pure post-process failed:', e.message);
+          }
+          if (!cancelled) setProgress(Math.round((i + 1) / STYLE_IDS.length * 100));
+          continue;
+        }
+
         setStage(`Rendering style ${i + 1} of ${STYLE_IDS.length}: ${styleId}…`);
         try {
           const resp = await fetch(WORKER_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            // strength: 0.25 requests 75% input fidelity from the AI backend;
-            // ignored by backends that don't support it.
-            body: JSON.stringify({ image_b64, style: styleId, strength: 0.25 }),
+            // strength forwarded to the img2img backend. Tuned per artist:
+            // see STYLE_PROFILES. Lower = preserve the child's drawing;
+            // higher = let the artist's interpretation breathe.
+            body: JSON.stringify({ image_b64, style: styleId, strength: profile.aiStrength ?? 0.4 }),
           });
           if (resp.ok) {
             const data = await resp.json();
             if (data.image_b64) {
               setStage(`Vectorizing style ${i + 1} of ${STYLE_IDS.length}: ${styleId}…`);
-              results[styleId] = await postProcess(originalDataURL, data.image_b64);
+              results[styleId] = await postProcess(originalDataURL, data.image_b64, styleId);
             }
           }
         } catch (e) {
