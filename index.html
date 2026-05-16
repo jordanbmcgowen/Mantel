@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mantel — Where the masterpiece hangs</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="app.css" />
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<template id="__bundler_thumbnail" data-bg-color="#F1ECE2">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#F1ECE2"/>
+    <!-- 10 mini frames in a 5x2 grid suggesting the style gallery -->
+    <g>
+      <rect x="120" y="180" width="180" height="220" fill="#fff" stroke="#1A1815" strokeWidth="2"/>
+      <circle cx="210" cy="290" r="46" fill="#B85C3E"/>
+      <rect x="320" y="180" width="180" height="220" fill="#E14B2E"/>
+      <circle cx="410" cy="260" r="36" fill="#F2A93B"/>
+      <rect x="380" y="320" width="80" height="60" fill="#2A4FB2"/>
+      <rect x="520" y="180" width="180" height="220" fill="#08183A"/>
+      <circle cx="610" cy="290" r="48" fill="#3F6BA5"/>
+      <rect x="720" y="180" width="180" height="220" fill="#F4F0E8"/>
+      <rect x="720" y="180" width="60" height="80" fill="#D62828"/>
+      <rect x="840" y="320" width="60" height="80" fill="#F4C40D"/>
+      <rect x="780" y="260" width="60" height="60" fill="#1B4FBF"/>
+      <rect x="920" y="180" width="180" height="220" fill="#1A0604"/>
+      <rect x="940" y="210" width="140" height="80" fill="#DC4222"/>
+      <rect x="940" y="310" width="140" height="80" fill="#3A0E08"/>
+      <rect x="120" y="430" width="180" height="220" fill="#BFE6F2"/>
+      <rect x="120" y="540" width="180" height="60" fill="#3CB7B3"/>
+      <rect x="320" y="430" width="180" height="220" fill="#D8C089"/>
+      <path d="M380 460 l 8 -20 l 12 16 l 12 -16 l 8 20 z" fill="#F4C40D" stroke="#0E0604" strokeWidth="2"/>
+      <rect x="520" y="430" width="180" height="220" fill="#F4ECDC"/>
+      <circle cx="560" cy="470" r="14" fill="#D62828"/>
+      <circle cx="660" cy="600" r="10" fill="#1B4FBF"/>
+      <g fill="#FFD23F">
+        <rect x="720" y="430" width="90" height="110"/>
+        <rect x="810" y="430" width="90" height="110" fill="#3CB7B3"/>
+        <rect x="720" y="540" width="90" height="110" fill="#FF6B6B"/>
+        <rect x="810" y="540" width="90" height="110" fill="#0E0E0D"/>
+      </g>
+      <rect x="920" y="430" width="180" height="220" fill="#C8B89A" stroke="#5E4E3A" strokeWidth="2"/>
+      <g fill="#D8C49A">
+        <rect x="930" y="440" width="50" height="50"/>
+        <rect x="990" y="440" width="50" height="60" fill="#B4C7D4"/>
+        <rect x="1050" y="440" width="40" height="50" fill="#CDB5B5"/>
+        <rect x="930" y="500" width="60" height="50" fill="#A8C3B0"/>
+        <rect x="1000" y="510" width="90" height="50" fill="#D0B8C2"/>
+      </g>
+    </g>
+    <!-- Brand mark -->
+    <circle cx="585" cy="100" r="10" fill="#B85C3E"/>
+    <text x="605" y="108" fontFamily="Georgia, serif" fontSize="40" fill="#1A1815">Mantel</text>
+    <text x="600" y="730" fontFamily="ui-monospace, monospace" fontSize="14" fill="#8A847B" textAnchor="middle" letterSpacing="3">TEN STYLES · ONE DRAWING</text>
+  </svg>
+</template>
+<div id="root"></div>
+
+<script>
+  // Defaults the host can rewrite to disk when the user toggles a tweak.
+  window.TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "theme": "boutique",
+    "density": "regular",
+    "gallery": "grid",
+    "framePreview": "room",
+    "brand": "Mantel"
+  }/*EDITMODE-END*/;
+</script>
+
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="defs.jsx"></script>
+<script type="text/babel" src="drawings.jsx"></script>
+<script type="text/babel" src="styles.jsx"></script>
+<script type="text/babel" src="screens.jsx"></script>
+<script type="text/babel" src="app.jsx"></script>
+</body>
+</html>
