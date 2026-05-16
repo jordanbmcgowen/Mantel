@@ -66,7 +66,7 @@ function App() {
           aiResults={aiResults}
         />
       )}
-      {screen === "detail" && <Detail go={go} drawing={drawing} style={style} setStyle={setStyle}/>}
+      {screen === "detail" && <Detail go={go} drawing={drawing} style={style} setStyle={setStyle} aiResults={aiResults} uploaded={uploaded}/>}
       {screen === "configure" && (
         <Configure
           go={go}
