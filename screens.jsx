@@ -141,7 +141,7 @@ function Upload({ go, setDrawing, setUploaded, uploaded }) {
   function handleFile(file) {
     if (!file) return;
     const url = URL.createObjectURL(file);
-    setUploaded({ url, name: file.name, size: file.size });
+    setUploaded({ url, file, name: file.name, size: file.size });
     setDrawing("house"); // user-uploaded ones still run through "house" treatments for previews
     go("processing");
   }
@@ -237,26 +237,10 @@ function Processing({ go, drawing, uploaded, setAiResults }) {
 
       // Read file as base64
       setStage('Reading your image…');
-      const image_b64 = await new Promise((resolve, reject) => {
+      const image_b64 = await new Promise((resolve) => {
         const reader = new FileReader();
-        reader.onload = () => {
-          const dataUrl = reader.result;
-          resolve(dataUrl.split(',')[1]);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(uploaded.file || (() => {
-          // uploaded.url is an object URL - fetch it back
-          throw new Error('need file');
-        })());
-      }).catch(async () => {
-        // Fall back: fetch the object URL
-        const resp = await fetch(uploaded.url);
-        const blob = await resp.blob();
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result.split(',')[1]);
-          reader.readAsDataURL(blob);
-        });
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.readAsDataURL(uploaded.file);
       });
 
       const results = {};
