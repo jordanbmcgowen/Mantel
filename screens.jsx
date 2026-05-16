@@ -138,18 +138,29 @@ function Upload({ go, setDrawing, setUploaded, uploaded }) {
     setUploaded(null);
     go("processing");
   }
-  function handleFile(file) {
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    setUploaded({ url, file, name: file.name, size: file.size });
-    setDrawing("house"); // user-uploaded ones still run through "house" treatments for previews
-    go("processing");
+  async function handleFile(file) {
+  if (!file) return;
+  // Convert HEIC/HEIF to JPEG in-browser before anything else
+  const isHeic = file.type === 'image/heic' || file.type === 'image/heif' ||
+    /\.heic$/i.test(file.name) || /\.heif$/i.test(file.name);
+  if (isHeic && window.heic2any) {
+    try {
+      const converted = await window.heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
+      file = new File([converted], file.name.replace(/\.heic$/i, '.jpg').replace(/\.heif$/i, '.jpg'), { type: 'image/jpeg' });
+    } catch (e) {
+      console.warn('HEIC conversion failed, trying original:', e);
+    }
   }
-  function onDrop(e) {
+  const url = URL.createObjectURL(file);
+  setUploaded({ url, file, name: file.name, size: file.size });
+  setDrawing("house");
+  go("processing");
+}
+  async function onDrop(e) {
     e.preventDefault();
     setOver(false);
     const f = e.dataTransfer.files?.[0];
-    handleFile(f);
+    await handleFile(f);
   }
 
   return (
@@ -170,8 +181,8 @@ function Upload({ go, setDrawing, setUploaded, uploaded }) {
             onDragLeave={() => setOver(false)}
             onDrop={onDrop}
           >
-            <input ref={inputRef} type="file" accept="image/*" hidden
-                   onChange={(e) => handleFile(e.target.files?.[0])}/>
+            <input ref={inputRef} type="file" accept="image/*,.heic,.heif" hidden
+                   onChange={(e) => await handleFile(e.target.files?.[0])}/>
             <div className="dropzone-inner">
               <div className="dropzone-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
