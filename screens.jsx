@@ -182,7 +182,7 @@ function Upload({ go, setDrawing, setUploaded, uploaded }) {
             onDrop={onDrop}
           >
             <input ref={inputRef} type="file" accept="image/*,.heic,.heif" hidden
-                   onChange={(e) => await handleFile(e.target.files?.[0])}/>
+                   onChange={async (e) => { await handleFile(e.target.files?.[0]); }}/>
             <div className="dropzone-inner">
               <div className="dropzone-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
