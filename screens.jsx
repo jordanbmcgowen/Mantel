@@ -212,23 +212,85 @@ function Upload({ go, setDrawing, setUploaded, uploaded }) {
 }
 
 // ─── Processing ─────────────────────────────────────────────────────────────
-function Processing({ go, drawing, uploaded }) {
-  const stages = [
-    "Removing paper, shadows, creases",
-    "Tracing edges, vectorizing strokes",
-    "Sampling color from the original",
-    "Matching against ten artist lenses",
-    "Rendering previews",
-  ];
-  const [i, setI] = useState(0);
+const WORKER_URL = 'https://mantel-ai.jordanbmcgowen.workers.dev';
+
+const STYLE_IDS = ['pure','matisse','rothko','hockney','basquiat','miro','warhol','klee','mondrian','picasso'];
+
+function Processing({ go, drawing, uploaded, setAiResults }) {
+  const [progress, setProgress] = useState(0);
+  const [stage, setStage] = useState('Preparing your image…');
+
   useEffect(() => {
-    if (i >= stages.length) {
-      const t = setTimeout(() => go("results"), 280);
-      return () => clearTimeout(t);
+    let cancelled = false;
+
+    async function runAI() {
+      if (!uploaded) {
+        // Sample drawing - skip AI, go straight to results
+        for (let step = 0; step <= 5; step++) {
+          if (cancelled) return;
+          await new Promise(r => setTimeout(r, 400));
+          setProgress(Math.round(step / 5 * 100));
+        }
+        if (!cancelled) go('results');
+        return;
+      }
+
+      // Read file as base64
+      setStage('Reading your image…');
+      const image_b64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = reader.result;
+          resolve(dataUrl.split(',')[1]);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(uploaded.file || (() => {
+          // uploaded.url is an object URL - fetch it back
+          throw new Error('need file');
+        })());
+      }).catch(async () => {
+        // Fall back: fetch the object URL
+        const resp = await fetch(uploaded.url);
+        const blob = await resp.blob();
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(',')[1]);
+          reader.readAsDataURL(blob);
+        });
+      });
+
+      const results = {};
+      // Process each style sequentially
+      for (let i = 0; i < STYLE_IDS.length; i++) {
+        if (cancelled) return;
+        const styleId = STYLE_IDS[i];
+        setStage(`Rendering style ${i + 1} of ${STYLE_IDS.length}: ${styleId}…`);
+        try {
+          const resp = await fetch(WORKER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image_b64, style: styleId }),
+          });
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data.image_b64) results[styleId] = 'data:image/png;base64,' + data.image_b64;
+          }
+        } catch (e) {
+          console.warn('Style', styleId, 'failed:', e.message);
+        }
+        if (!cancelled) setProgress(Math.round((i + 1) / STYLE_IDS.length * 100));
+      }
+
+      if (!cancelled) {
+        setAiResults(results);
+        go('results');
+      }
     }
-    const t = setTimeout(() => setI(i + 1), 580);
-    return () => clearTimeout(t);
-  }, [i]);
+
+    runAI();
+    return () => { cancelled = true; };
+  }, []);
+
   const D = DRAWINGS[drawing]?.component;
   return (
     <section className="processing frame">
@@ -240,14 +302,15 @@ function Processing({ go, drawing, uploaded }) {
           <img src={uploaded.url} alt="" style={{width:"100%", height:"100%", objectFit:"contain"}} />
         ) : (D && <D />)}
       </div>
-      <div className="processing-stage">{stages[Math.min(i, stages.length - 1)]}</div>
-      <div className="processing-bar"></div>
+      <div className="processing-stage">{stage}</div>
+      <div className="processing-bar" style={{width: progress + '%'}}></div>
+      <div style={{fontFamily:"var(--f-mono)", fontSize:11, color:"var(--ink-3)", marginTop:8, textAlign:"center"}}>{progress}%</div>
     </section>
   );
 }
 
 // ─── Results ────────────────────────────────────────────────────────────────
-function Results({ go, drawing, uploaded, setStyle, galleryLayout, setGalleryLayout, brand }) {
+function Results({ go, drawing, uploaded, setStyle, galleryLayout, setGalleryLayout, brand, aiResults }) {
   const D = DRAWINGS[drawing]?.component;
   return (
     <section className="results frame">
@@ -269,8 +332,8 @@ function Results({ go, drawing, uploaded, setStyle, galleryLayout, setGalleryLay
           <div className="layout-switch">
             {["grid","masonry","carousel"].map(l => (
               <button key={l}
-                      className={galleryLayout === l ? "is-active" : ""}
-                      onClick={() => setGalleryLayout(l)}>{l}</button>
+                className={galleryLayout === l ? "is-active" : ""}
+                onClick={() => setGalleryLayout(l)}>{l}</button>
             ))}
           </div>
         </div>
@@ -279,10 +342,14 @@ function Results({ go, drawing, uploaded, setStyle, galleryLayout, setGalleryLay
       <div className={`gallery-${galleryLayout}`}>
         {STYLES.map((s, i) => {
           const ratio = galleryLayout === "masonry" ? [1, 1.2, 0.9, 1.1, 0.85, 1.05, 1.15, 0.95, 1, 0.9][i] : 1;
+          const aiSrc = uploaded && aiResults && aiResults[s.id];
           return (
             <div key={s.id} className={`tile ${s.id === "pure" ? "is-pure" : ""}`} onClick={() => { setStyle(s.id); go("detail"); }}>
               <div className="tile-art" style={{aspectRatio: ratio}}>
-                <StyleLens style={s.id} drawing={drawing}/>
+                {aiSrc
+                  ? <img src={aiSrc} alt={s.name} style={{width:"100%", height:"100%", objectFit:"cover"}}/>
+                  : <StyleLens style={s.id} drawing={drawing}/>
+                }
               </div>
               <div className="tile-cap">
                 <div className="name">{s.name}</div>
