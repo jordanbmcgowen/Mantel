@@ -222,6 +222,66 @@ function Upload({ go, setDrawing, setUploaded, uploaded }) {
   );
 }
 
+// ─── Image post-processing ───────────────────────────────────────────────────
+
+function loadImageFromSrc(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+// Composites the AI-styled result with the original drawing to achieve ~75%
+// structural consistency, then vectorizes the result to SVG so it scales to
+// large print sizes without grain.
+async function postProcess(originalDataURL, aiBase64) {
+  try {
+    const aiDataURL = 'data:image/png;base64,' + aiBase64;
+    const [aiImg, origImg] = await Promise.all([
+      loadImageFromSrc(aiDataURL),
+      loadImageFromSrc(originalDataURL),
+    ]);
+
+    const canvas = document.createElement('canvas');
+    canvas.width  = aiImg.naturalWidth  || 512;
+    canvas.height = aiImg.naturalHeight || 512;
+    const ctx = canvas.getContext('2d');
+
+    // Base: AI result supplies the artistic color palette (hue + saturation).
+    ctx.drawImage(aiImg, 0, 0, canvas.width, canvas.height);
+
+    // Overlay: original's luminosity at 75% opacity. The 'luminosity' blend
+    // mode transfers brightness/structure from the original onto the AI's
+    // color layer — reinforcing the original drawing's shapes while keeping
+    // the AI's artistic palette intact.
+    ctx.globalAlpha = 0.75;
+    ctx.globalCompositeOperation = 'luminosity';
+    ctx.drawImage(origImg, 0, 0, canvas.width, canvas.height);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+
+    const composited = canvas.toDataURL('image/png');
+
+    // Vectorize using ImageTracer for resolution-independent SVG output.
+    if (typeof ImageTracer !== 'undefined') {
+      return await new Promise((resolve) => {
+        ImageTracer.imageToSVG(
+          composited,
+          (svg) => resolve('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)),
+          { numberofcolors: 64, colorquantcycles: 3, pathomit: 4, ltres: 0.5, qtres: 0.5 }
+        );
+      });
+    }
+
+    return composited;
+  } catch (e) {
+    console.warn('Post-processing failed:', e);
+    return 'data:image/png;base64,' + aiBase64;
+  }
+}
+
 // ─── Processing ─────────────────────────────────────────────────────────────
 const WORKER_URL = 'https://mantel-ai.jordanbmcgowen.workers.dev';
 
@@ -246,16 +306,20 @@ function Processing({ go, drawing, uploaded, setAiResults }) {
         return;
       }
 
-      // Read file as base64
+      // Read file once — keep both the raw base64 (for the API) and the full
+      // data URL (for client-side compositing after each API response).
       setStage('Reading your image…');
-      const image_b64 = await new Promise((resolve) => {
+      const { image_b64, originalDataURL } = await new Promise((resolve) => {
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onload = () => {
+          const dataURL = reader.result;
+          resolve({ image_b64: dataURL.split(',')[1], originalDataURL: dataURL });
+        };
         reader.readAsDataURL(uploaded.file);
       });
 
       const results = {};
-      // Process each style sequentially
+      // Process each style sequentially.
       for (let i = 0; i < STYLE_IDS.length; i++) {
         if (cancelled) return;
         const styleId = STYLE_IDS[i];
@@ -264,11 +328,16 @@ function Processing({ go, drawing, uploaded, setAiResults }) {
           const resp = await fetch(WORKER_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image_b64, style: styleId }),
+            // strength: 0.25 requests 75% input fidelity from the AI backend;
+            // ignored by backends that don't support it.
+            body: JSON.stringify({ image_b64, style: styleId, strength: 0.25 }),
           });
           if (resp.ok) {
             const data = await resp.json();
-            if (data.image_b64) results[styleId] = 'data:image/png;base64,' + data.image_b64;
+            if (data.image_b64) {
+              setStage(`Vectorizing style ${i + 1} of ${STYLE_IDS.length}: ${styleId}…`);
+              results[styleId] = await postProcess(originalDataURL, data.image_b64);
+            }
           }
         } catch (e) {
           console.warn('Style', styleId, 'failed:', e.message);
@@ -366,11 +435,12 @@ function Results({ go, drawing, uploaded, setStyle, galleryLayout, setGalleryLay
 }
 
 // ─── Detail ─────────────────────────────────────────────────────────────────
-function Detail({ go, drawing, style, setStyle }) {
+function Detail({ go, drawing, style, setStyle, aiResults, uploaded }) {
   const s = STYLES.find(x => x.id === style) || STYLES[0];
   const idx = STYLES.indexOf(s);
   const next = () => setStyle(STYLES[(idx + 1) % STYLES.length].id);
   const prev = () => setStyle(STYLES[(idx - 1 + STYLES.length) % STYLES.length].id);
+  const aiSrc = uploaded && aiResults && aiResults[s.id];
 
   return (
     <section className="detail frame">
@@ -380,7 +450,10 @@ function Detail({ go, drawing, style, setStyle }) {
       <div className="detail-grid">
         <div className="detail-art-shell">
           <div className="detail-art">
-            <StyleLens style={s.id} drawing={drawing}/>
+            {aiSrc
+              ? <img src={aiSrc} alt={s.name} style={{width:"100%",height:"100%",objectFit:"contain"}}/>
+              : <StyleLens style={s.id} drawing={drawing}/>
+            }
           </div>
           <div className="detail-actions">
             <div>{s.label} · STYLE {String(idx + 1).padStart(2,"0")} / 10</div>
