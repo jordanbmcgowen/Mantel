@@ -740,7 +740,7 @@ img, svg { display: block; max-width: 100%; }
   text-transform: uppercase;
   color: var(--ink-3);
 }
-.detail-nav { display: flex; gap: 6px; }
+.detail-nav { display: flex; gap: 6px; align-items: center; }
 .detail-nav button {
   appearance: none;
   border: .5px solid var(--rule-strong);
@@ -753,6 +753,23 @@ img, svg { display: block; max-width: 100%; }
   color: var(--ink-2);
 }
 .detail-nav button:hover { color: var(--accent); border-color: var(--accent); }
+.detail-download {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 14px;
+  margin-right: 6px;
+  border: .5px solid var(--rule-strong);
+  border-radius: 999px;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  text-decoration: none;
+  cursor: pointer;
+}
+.detail-download:hover { color: var(--accent); border-color: var(--accent); }
 
 .detail-meta .eyebrow { margin-bottom: 18px; }
 .detail-meta h2 {

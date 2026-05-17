@@ -76,11 +76,13 @@ function App() {
           setConfig={setConfig}
           framePreview={t.framePreview}
           setFramePreview={(v) => setTweak("framePreview", v)}
+          aiResults={aiResults}
+          uploaded={uploaded}
         />
       )}
-      {screen === "cart"         && <Cart go={go} drawing={drawing} style={style} config={config}/>}
-      {screen === "checkout"     && <Checkout go={go} drawing={drawing} style={style} config={config}/>}
-      {screen === "confirmation" && <Confirmation go={go} drawing={drawing} style={style} config={config} brand={t.brand}/>}
+      {screen === "cart"         && <Cart go={go} drawing={drawing} style={style} config={config} aiResults={aiResults} uploaded={uploaded}/>}
+      {screen === "checkout"     && <Checkout go={go} drawing={drawing} style={style} config={config} aiResults={aiResults} uploaded={uploaded}/>}
+      {screen === "confirmation" && <Confirmation go={go} drawing={drawing} style={style} config={config} brand={t.brand} aiResults={aiResults} uploaded={uploaded}/>}
 
       <footer className="foot">
         <div>© 2026 {t.brand} Studio · Made in Asheville, NC</div>
