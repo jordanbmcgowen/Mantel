@@ -282,6 +282,26 @@ async function vectorizeRaster(dataURL, vecOpts) {
   });
 }
 
+// Fast raster preview from a source data URL. Used for gallery and order-flow
+// thumbnails where rendering ten vectorized SVGs at once was tanking the page.
+// JPEG when alpha is not needed (≈10× smaller than equivalent PNG); PNG only
+// for the "pure" style where the paper has been knocked out to transparency.
+async function makePreview(dataURL, { maxDim = 640, preserveAlpha = false, quality = 0.85 } = {}) {
+  const img = await loadImageFromSrc(dataURL);
+  const w = img.naturalWidth || maxDim;
+  const h = img.naturalHeight || maxDim;
+  const scale = Math.min(1, maxDim / Math.max(w, h));
+  const dw = Math.max(1, Math.round(w * scale));
+  const dh = Math.max(1, Math.round(h * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = dw; canvas.height = dh;
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, 0, 0, dw, dh);
+  return preserveAlpha ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', quality);
+}
+
 // Knock the paper out of a phone photo of a child's drawing. Samples the
 // edges to estimate the median paper color, then feather-makes pixels
 // within color-distance transparent. Anti-aliased strokes survive cleanly.
@@ -342,23 +362,33 @@ async function removePaperBackground(dataURL) {
   return canvas.toDataURL('image/png');
 }
 
-// Final image for a given style. For "pure" we lift the original off the
-// paper and vectorize it — no AI interpretation, just print-ready scale.
-// For every other style the AI output is the design as the artist would
-// have made it; we vectorize that directly with the style's tuning.
+// Final assets for a given style. We return two representations:
+//   preview  — a small downscaled raster (~640px). Cheap to decode, ideal for
+//              the ten-up gallery and the order-flow thumbnails. This is what
+//              the user sees on first paint.
+//   full     — the print-scalable SVG vector. Used in the detail and configure
+//              previews, and exposed as a download for the high-res asset.
+// For "pure" we lift the original off the paper and vectorize it — no AI
+// interpretation, just print-ready scale. For every other style the AI output
+// is the design as the artist would have made it; we vectorize that directly.
 async function postProcess(originalDataURL, aiBase64, styleId) {
   const profile = STYLE_PROFILES[styleId] || STYLE_PROFILES.matisse;
   try {
     if (styleId === "pure") {
       const cleaned = await removePaperBackground(originalDataURL);
-      return await vectorizeRaster(cleaned, profile.vec);
+      const full = await vectorizeRaster(cleaned, profile.vec);
+      const preview = await makePreview(cleaned, { preserveAlpha: true });
+      return { preview, full };
     }
     if (!aiBase64) return null;
     const aiDataURL = 'data:image/png;base64,' + aiBase64;
-    return await vectorizeRaster(aiDataURL, profile.vec);
+    const full = await vectorizeRaster(aiDataURL, profile.vec);
+    const preview = await makePreview(aiDataURL, { preserveAlpha: false });
+    return { preview, full };
   } catch (e) {
     console.warn('Post-processing failed for', styleId, e);
-    return aiBase64 ? 'data:image/png;base64,' + aiBase64 : originalDataURL;
+    const fallback = aiBase64 ? 'data:image/png;base64,' + aiBase64 : originalDataURL;
+    return { preview: fallback, full: fallback };
   }
 }
 
@@ -502,12 +532,13 @@ function Results({ go, drawing, uploaded, setStyle, galleryLayout, setGalleryLay
       <div className={`gallery-${galleryLayout}`}>
         {STYLES.map((s, i) => {
           const ratio = galleryLayout === "masonry" ? [1, 1.2, 0.9, 1.1, 0.85, 1.05, 1.15, 0.95, 1, 0.9][i] : 1;
-          const aiSrc = uploaded && aiResults && aiResults[s.id];
+          const aiAsset = uploaded && aiResults && aiResults[s.id];
+          const previewSrc = aiAsset?.preview || aiAsset?.full;
           return (
             <div key={s.id} className={`tile ${s.id === "pure" ? "is-pure" : ""}`} onClick={() => { setStyle(s.id); go("detail"); }}>
               <div className="tile-art" style={{aspectRatio: ratio}}>
-                {aiSrc
-                  ? <img src={aiSrc} alt={s.name} style={{width:"100%", height:"100%", objectFit:"cover"}}/>
+                {previewSrc
+                  ? <img src={previewSrc} alt={s.name} loading="lazy" decoding="async" style={{width:"100%", height:"100%", objectFit:"cover"}}/>
                   : <StyleLens style={s.id} drawing={drawing}/>
                 }
               </div>
@@ -536,7 +567,8 @@ function Detail({ go, drawing, style, setStyle, aiResults, uploaded }) {
   const idx = STYLES.indexOf(s);
   const next = () => setStyle(STYLES[(idx + 1) % STYLES.length].id);
   const prev = () => setStyle(STYLES[(idx - 1 + STYLES.length) % STYLES.length].id);
-  const aiSrc = uploaded && aiResults && aiResults[s.id];
+  const aiAsset = uploaded && aiResults && aiResults[s.id];
+  const fullSrc = aiAsset?.full || aiAsset?.preview;
 
   return (
     <section className="detail frame">
@@ -546,14 +578,22 @@ function Detail({ go, drawing, style, setStyle, aiResults, uploaded }) {
       <div className="detail-grid">
         <div className="detail-art-shell">
           <div className="detail-art">
-            {aiSrc
-              ? <img src={aiSrc} alt={s.name} style={{width:"100%",height:"100%",objectFit:"contain"}}/>
+            {fullSrc
+              ? <img src={fullSrc} alt={s.name} decoding="async" style={{width:"100%",height:"100%",objectFit:"contain"}}/>
               : <StyleLens style={s.id} drawing={drawing}/>
             }
           </div>
           <div className="detail-actions">
             <div>{s.label} · STYLE {String(idx + 1).padStart(2,"0")} / 10</div>
             <div className="detail-nav">
+              {fullSrc && (
+                <a className="detail-download"
+                   href={fullSrc}
+                   download={`${s.id}-${drawing || "design"}.svg`}
+                   aria-label="Download high-resolution vector">
+                  ↓ Vector
+                </a>
+              )}
               <button onClick={prev} aria-label="Previous">‹</button>
               <button onClick={next} aria-label="Next">›</button>
             </div>
@@ -604,11 +644,13 @@ const FRAMES = [
   { id: "float",  name: "Float",   sub: "Black + matte",price: 70, swatch: "#0e0e0d" },
 ];
 
-function Configure({ go, drawing, style, config, setConfig, framePreview, setFramePreview }) {
+function Configure({ go, drawing, style, config, setConfig, framePreview, setFramePreview, aiResults, uploaded }) {
   const s = STYLES.find(x => x.id === style) || STYLES[0];
   const size = SIZES.find(x => x.id === config.size) || SIZES[0];
   const frame = FRAMES.find(x => x.id === config.frame) || FRAMES[0];
   const total = size.price + frame.price + (config.personalOn ? 12 : 0);
+  const aiAsset = uploaded && aiResults && aiResults[s.id];
+  const designSrc = aiAsset?.full || aiAsset?.preview;
 
   return (
     <section className="configure frame">
@@ -634,7 +676,10 @@ function Configure({ go, drawing, style, config, setConfig, framePreview, setFra
             }>
               <div className="frame-wrap" data-frame={frame.id}>
                 <div className="canvas-inner">
-                  <StyleLens style={s.id} drawing={drawing}/>
+                  {designSrc
+                    ? <img src={designSrc} alt={s.name} decoding="async" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    : <StyleLens style={s.id} drawing={drawing}/>
+                  }
                   {config.personalOn && (
                     <div style={{
                       position: "absolute", bottom: 0, left: 0, right: 0,
@@ -768,13 +813,15 @@ function RoomScene() {
 }
 
 // ─── Cart ───────────────────────────────────────────────────────────────────
-function Cart({ go, drawing, style, config }) {
+function Cart({ go, drawing, style, config, aiResults, uploaded }) {
   const s = STYLES.find(x => x.id === style) || STYLES[0];
   const size = SIZES.find(x => x.id === config.size) || SIZES[0];
   const frame = FRAMES.find(x => x.id === config.frame) || FRAMES[0];
   const sub = size.price + frame.price + (config.personalOn ? 12 : 0);
   const shipping = sub >= 120 ? 0 : 12;
   const total = sub + shipping;
+  const aiAsset = uploaded && aiResults && aiResults[style];
+  const thumbSrc = aiAsset?.preview || aiAsset?.full;
 
   return (
     <section className="cart frame">
@@ -790,7 +837,10 @@ function Cart({ go, drawing, style, config }) {
             <div className="cart-thumb">
               <div className="frame-wrap" data-frame={frame.id} style={{padding: frame.id === "canvas" ? 3 : 8, aspectRatio: "4/5"}}>
                 <div className="canvas-inner">
-                  <StyleLens style={style} drawing={drawing}/>
+                  {thumbSrc
+                    ? <img src={thumbSrc} alt={s.name} loading="lazy" decoding="async" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    : <StyleLens style={style} drawing={drawing}/>
+                  }
                 </div>
               </div>
             </div>
@@ -841,7 +891,7 @@ function Cart({ go, drawing, style, config }) {
 }
 
 // ─── Checkout ───────────────────────────────────────────────────────────────
-function Checkout({ go, drawing, style, config }) {
+function Checkout({ go, drawing, style, config, aiResults, uploaded }) {
   const [pay, setPay] = useState("card");
   const s = STYLES.find(x => x.id === style) || STYLES[0];
   const size = SIZES.find(x => x.id === config.size) || SIZES[0];
@@ -849,6 +899,8 @@ function Checkout({ go, drawing, style, config }) {
   const sub = size.price + frame.price + (config.personalOn ? 12 : 0);
   const shipping = sub >= 120 ? 0 : 12;
   const total = sub + shipping;
+  const aiAsset = uploaded && aiResults && aiResults[style];
+  const thumbSrc = aiAsset?.preview || aiAsset?.full;
   return (
     <section className="cart frame">
       <button className="detail-back" onClick={() => go("cart")}>
@@ -901,7 +953,12 @@ function Checkout({ go, drawing, style, config }) {
           <div style={{display: "flex", gap: 14, marginBottom: 18, paddingBottom: 18, borderBottom: ".5px solid var(--rule)"}}>
             <div style={{width: 64, aspectRatio: "4/5", flexShrink: 0}}>
               <div className="frame-wrap" data-frame={frame.id} style={{padding: 4, aspectRatio: "4/5"}}>
-                <div className="canvas-inner"><StyleLens style={style} drawing={drawing}/></div>
+                <div className="canvas-inner">
+                  {thumbSrc
+                    ? <img src={thumbSrc} alt={s.name} loading="lazy" decoding="async" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    : <StyleLens style={style} drawing={drawing}/>
+                  }
+                </div>
               </div>
             </div>
             <div style={{fontSize: 13, lineHeight: 1.5}}>
@@ -925,11 +982,13 @@ function Checkout({ go, drawing, style, config }) {
 }
 
 // ─── Confirmation ───────────────────────────────────────────────────────────
-function Confirmation({ go, drawing, style, config, brand }) {
+function Confirmation({ go, drawing, style, config, brand, aiResults, uploaded }) {
   const s = STYLES.find(x => x.id === style) || STYLES[0];
   const size = SIZES.find(x => x.id === config.size) || SIZES[0];
   const frame = FRAMES.find(x => x.id === config.frame) || FRAMES[0];
   const orderNo = useMemo(() => "KC-" + Math.floor(Math.random() * 900000 + 100000), []);
+  const aiAsset = uploaded && aiResults && aiResults[style];
+  const thumbSrc = aiAsset?.preview || aiAsset?.full;
   return (
     <section className="confirm frame">
       <div className="mark-big">✓</div>
@@ -938,7 +997,12 @@ function Confirmation({ go, drawing, style, config, brand }) {
       <div className="confirm-card">
         <div className="thumb">
           <div className="frame-wrap" data-frame={frame.id} style={{padding: 4, aspectRatio: "4/5"}}>
-            <div className="canvas-inner"><StyleLens style={style} drawing={drawing}/></div>
+            <div className="canvas-inner">
+              {thumbSrc
+                ? <img src={thumbSrc} alt={s.name} loading="lazy" decoding="async" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                : <StyleLens style={style} drawing={drawing}/>
+              }
+            </div>
           </div>
         </div>
         <div>
