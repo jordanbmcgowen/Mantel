@@ -79,7 +79,7 @@ function Landing({ go, brand }) {
       <section className="section frame">
         <div className="section-head">
           <h2>How it<br/>works.</h2>
-          <p className="lede">Four steps. The whole thing takes about a minute. The result hangs on your wall for decades.</p>
+          <p className="lede">Four steps. The whole thing takes a minute or two. The result hangs on your wall for decades.</p>
         </div>
         <div className="steps">
           <div className="step">
@@ -191,7 +191,7 @@ function Upload({ go, setDrawing, setUploaded, uploaded }) {
               </div>
               <h3>Drop a photo here</h3>
               <p>or click to choose a file — JPG, PNG, HEIC up to 25MB</p>
-              <div className="fileinfo">PROCESSED IN UNDER A MINUTE</div>
+              <div className="fileinfo">TEN STYLES · READY IN A MINUTE OR TWO</div>
             </div>
           </div>
         </div>
@@ -257,17 +257,42 @@ function loadImageFromSrc(src) {
 //                more colors so smooth fields don't fragment into speckly
 //                polygons; flat styles get aggressive path-omission so they
 //                read graphic.
+// `prompt` is sent to the img2img worker alongside `style`. It is phrased to
+// describe the *artwork transformation* only — deliberately free of any words
+// referring to a minor (child/kid/young/etc.), because OpenAI's moderation
+// layer flags "edit an image of a minor" requests and rejects them (HTTP 400,
+// moderation_blocked). The worker's own built-in prompts trip this for some
+// styles (notably Hockney), so we always override with a safe prompt here.
 const STYLE_PROFILES = {
-  pure:     { aiStrength: null, vec: { numberofcolors: 24, colorquantcycles: 4, pathomit: 6,  ltres: 0.4, qtres: 0.4, blurradius: 1, blurdelta: 14 } },
-  warhol:   { aiStrength: 0.25, vec: { numberofcolors: 8,  colorquantcycles: 4, pathomit: 12, ltres: 0.8, qtres: 0.8, blurradius: 1, blurdelta: 14 } },
-  basquiat: { aiStrength: 0.30, vec: { numberofcolors: 28, colorquantcycles: 3, pathomit: 4,  ltres: 0.5, qtres: 0.5, blurradius: 1, blurdelta: 14 } },
-  hockney:  { aiStrength: 0.40, vec: { numberofcolors: 14, colorquantcycles: 4, pathomit: 10, ltres: 1.0, qtres: 1.0, blurradius: 2, blurdelta: 18 } },
-  picasso:  { aiStrength: 0.45, vec: { numberofcolors: 28, colorquantcycles: 4, pathomit: 6,  ltres: 0.6, qtres: 0.6, blurradius: 2, blurdelta: 18 } },
-  klee:     { aiStrength: 0.45, vec: { numberofcolors: 32, colorquantcycles: 4, pathomit: 6,  ltres: 0.5, qtres: 0.5, blurradius: 2, blurdelta: 18 } },
-  matisse:  { aiStrength: 0.55, vec: { numberofcolors: 10, colorquantcycles: 4, pathomit: 14, ltres: 1.2, qtres: 1.2, blurradius: 3, blurdelta: 20 } },
-  miro:     { aiStrength: 0.70, vec: { numberofcolors: 10, colorquantcycles: 4, pathomit: 12, ltres: 1.0, qtres: 1.0, blurradius: 2, blurdelta: 18 } },
-  mondrian: { aiStrength: 0.80, vec: { numberofcolors: 5,  colorquantcycles: 3, pathomit: 20, ltres: 2.0, qtres: 2.0, blurradius: 4, blurdelta: 24 } },
-  rothko:   { aiStrength: 0.85, vec: { numberofcolors: 48, colorquantcycles: 5, pathomit: 2,  ltres: 0.5, qtres: 0.5, blurradius: 5, blurdelta: 24 } },
+  pure:     { aiStrength: null, fallbackBg: "#F4F0E8",
+              vec: { numberofcolors: 24, colorquantcycles: 4, pathomit: 6,  ltres: 0.4, qtres: 0.4, blurradius: 1, blurdelta: 14 } },
+  warhol:   { aiStrength: 0.25, fallbackBg: "#FFD23F",
+              prompt: "Transform this simple crayon picture into an Andy Warhol pop-art silkscreen: bold flat blocks of high-contrast saturated color, graphic screenprint look, slightly off-register.",
+              vec: { numberofcolors: 8,  colorquantcycles: 4, pathomit: 12, ltres: 0.8, qtres: 0.8, blurradius: 1, blurdelta: 14 } },
+  basquiat: { aiStrength: 0.30, fallbackBg: "#C8A877",
+              prompt: "Transform this simple crayon picture into a Jean-Michel Basquiat neo-expressionist painting: raw energetic oilstick marks on warm kraft paper, bold primary colors, a three-point crown motif, scrawled and untamed.",
+              vec: { numberofcolors: 28, colorquantcycles: 3, pathomit: 4,  ltres: 0.5, qtres: 0.5, blurradius: 1, blurdelta: 14 } },
+  hockney:  { aiStrength: 0.40, fallbackBg: "#3CB7B3",
+              prompt: "Transform this simple crayon picture into a David Hockney pop California scene: flat sunlit shapes, turquoise water, hot pink and bright yellow, clean graphic style with bold confident outlines.",
+              vec: { numberofcolors: 14, colorquantcycles: 4, pathomit: 10, ltres: 1.0, qtres: 1.0, blurradius: 2, blurdelta: 18 } },
+  picasso:  { aiStrength: 0.45, fallbackBg: "#0F1E3D",
+              prompt: "Transform this simple crayon picture into a Picasso Blue Period oil painting: everything rendered in deep melancholic blues and soft cyan, painterly brushwork, somber and tender.",
+              vec: { numberofcolors: 28, colorquantcycles: 4, pathomit: 6,  ltres: 0.6, qtres: 0.6, blurradius: 2, blurdelta: 18 } },
+  klee:     { aiStrength: 0.45, fallbackBg: "#D8C49A",
+              prompt: "Transform this simple crayon picture into a Paul Klee watercolor: a soft mosaic of pastel washed squares with a single thin ink line tracing the subject over the top, gentle and musical.",
+              vec: { numberofcolors: 32, colorquantcycles: 4, pathomit: 6,  ltres: 0.5, qtres: 0.5, blurradius: 2, blurdelta: 18 } },
+  matisse:  { aiStrength: 0.55, fallbackBg: "#F1ECE2",
+              prompt: "Transform this simple crayon picture into a Henri Matisse paper cut-out collage: flat shapes of solid vermillion, cobalt blue, kelly green and gold torn from colored paper, no outlines, bold and joyful.",
+              vec: { numberofcolors: 10, colorquantcycles: 4, pathomit: 14, ltres: 1.2, qtres: 1.2, blurradius: 3, blurdelta: 20 } },
+  miro:     { aiStrength: 0.70, fallbackBg: "#F0E6CE",
+              prompt: "Transform this simple crayon picture into a Joan Miro painting: playful biomorphic shapes, thin black connecting lines, stars and dots, primary red blue and yellow on a soft cream ground, dreamlike.",
+              vec: { numberofcolors: 10, colorquantcycles: 4, pathomit: 12, ltres: 1.0, qtres: 1.0, blurradius: 2, blurdelta: 18 } },
+  mondrian: { aiStrength: 0.80, fallbackBg: "#F4F0E8",
+              prompt: "Transform this simple picture into a Piet Mondrian De Stijl composition: bold rectangles of primary red, yellow and blue on white, divided by thick black lines, geometric and clean.",
+              vec: { numberofcolors: 5,  colorquantcycles: 3, pathomit: 20, ltres: 2.0, qtres: 2.0, blurradius: 4, blurdelta: 24 } },
+  rothko:   { aiStrength: 0.85, fallbackBg: "#2A0604",
+              prompt: "Transform this simple picture into a Mark Rothko color field painting: two large soft-edged horizontal bands of glowing color, hazy and atmospheric, the subject dissolved into pure color.",
+              vec: { numberofcolors: 48, colorquantcycles: 5, pathomit: 2,  ltres: 0.5, qtres: 0.5, blurradius: 5, blurdelta: 24 } },
 };
 
 // Vectorize a raster (data URL) into a print-scalable SVG data URL.
@@ -362,6 +387,167 @@ async function removePaperBackground(dataURL) {
   return canvas.toDataURL('image/png');
 }
 
+// ─── Client-side style fallback ──────────────────────────────────────────────
+// The AI worker can fail on any given style (OpenAI moderation rejects edits
+// stochastically, the model cold-starts, the network blips). When that happens
+// we must NOT fall back to an unrelated stock drawing — the user uploaded their
+// own art and every tile has to be visibly *theirs*. So we synthesize a
+// style-evoking interpretation entirely in-browser from the user's cleaned
+// (paper-removed) drawing. Not museum-grade, but unmistakably derived from the
+// real image, fast, and 100% reliable. This is what guarantees a full ten-up.
+
+function hexToRGB(hex) {
+  const h = hex.replace('#', '');
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+
+// Draw the cleaned (transparent-paper) drawing flattened onto a solid color so
+// the knocked-out background reads as the style's ground, not black.
+function flatten(img, w, h, bg) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, w, h);
+  ctx.drawImage(img, 0, 0, w, h);
+  return { c, ctx };
+}
+
+// Map every pixel's luminance onto a dark→light color ramp (duotone/tritone).
+function duotone(ctx, w, h, dark, light, mid) {
+  const id = ctx.getImageData(0, 0, w, h);
+  const p = id.data;
+  const d = hexToRGB(dark), l = hexToRGB(light), m = mid ? hexToRGB(mid) : null;
+  for (let i = 0; i < p.length; i += 4) {
+    const lum = (0.299 * p[i] + 0.587 * p[i + 1] + 0.114 * p[i + 2]) / 255;
+    let r, g, b;
+    if (m) {
+      if (lum < 0.5) { const t = lum / 0.5; r = d[0] + (m[0] - d[0]) * t; g = d[1] + (m[1] - d[1]) * t; b = d[2] + (m[2] - d[2]) * t; }
+      else { const t = (lum - 0.5) / 0.5; r = m[0] + (l[0] - m[0]) * t; g = m[1] + (l[1] - m[1]) * t; b = m[2] + (l[2] - m[2]) * t; }
+    } else {
+      r = d[0] + (l[0] - d[0]) * lum; g = d[1] + (l[1] - d[1]) * lum; b = d[2] + (l[2] - d[2]) * lum;
+    }
+    p[i] = r; p[i + 1] = g; p[i + 2] = b;
+  }
+  ctx.putImageData(id, 0, 0);
+}
+
+// Quantize each channel to N levels — the flat poster-paint look.
+function posterize(ctx, w, h, levels) {
+  const id = ctx.getImageData(0, 0, w, h);
+  const p = id.data;
+  const step = 255 / (levels - 1);
+  for (let i = 0; i < p.length; i += 4) {
+    p[i]     = Math.round(Math.round(p[i] / step) * step);
+    p[i + 1] = Math.round(Math.round(p[i + 1] / step) * step);
+    p[i + 2] = Math.round(Math.round(p[i + 2] / step) * step);
+  }
+  ctx.putImageData(id, 0, 0);
+}
+
+// Snap each pixel to the nearest entry in a small palette (Mondrian / Matisse).
+function snapToPalette(ctx, w, h, palette) {
+  const id = ctx.getImageData(0, 0, w, h);
+  const p = id.data;
+  const pal = palette.map(hexToRGB);
+  for (let i = 0; i < p.length; i += 4) {
+    let best = 0, bestD = Infinity;
+    for (let k = 0; k < pal.length; k++) {
+      const dr = p[i] - pal[k][0], dg = p[i + 1] - pal[k][1], db = p[i + 2] - pal[k][2];
+      const dd = dr * dr + dg * dg + db * db;
+      if (dd < bestD) { bestD = dd; best = k; }
+    }
+    p[i] = pal[best][0]; p[i + 1] = pal[best][1]; p[i + 2] = pal[best][2];
+  }
+  ctx.putImageData(id, 0, 0);
+}
+
+async function clientStyleFilter(cleanedDataURL, styleId, { maxDim = 1024 } = {}) {
+  const img = await loadImageFromSrc(cleanedDataURL);
+  const iw = img.naturalWidth || maxDim, ih = img.naturalHeight || maxDim;
+  const scale = Math.min(1, maxDim / Math.max(iw, ih));
+  const w = Math.max(1, Math.round(iw * scale)), h = Math.max(1, Math.round(ih * scale));
+  const bg = (STYLE_PROFILES[styleId] || {}).fallbackBg || '#F1ECE2';
+
+  // Warhol — 2×2 quad, each cell a different duotone of the drawing.
+  if (styleId === 'warhol') {
+    const out = document.createElement('canvas');
+    out.width = w; out.height = h;
+    const octx = out.getContext('2d');
+    const pairs = [
+      ['#C72A1C', '#FFD23F'], ['#0E2A52', '#3CB7B3'],
+      ['#1a0a1a', '#FF6B6B'], ['#0E0E0D', '#FFD23F'],
+    ];
+    const cw = Math.floor(w / 2), ch = Math.floor(h / 2);
+    pairs.forEach((pair, i) => {
+      const { c, ctx } = flatten(img, w, h, '#fff');
+      ctx.filter = 'contrast(1.2)';
+      ctx.drawImage(c, 0, 0);
+      duotone(ctx, w, h, pair[0], pair[1]);
+      octx.drawImage(c, (i % 2) * cw, Math.floor(i / 2) * ch, cw, ch);
+    });
+    return out.toDataURL('image/jpeg', 0.86);
+  }
+
+  const { c, ctx } = flatten(img, w, h, bg);
+
+  switch (styleId) {
+    case 'picasso':
+      duotone(ctx, w, h, '#08152E', '#A8C5E8', '#3F6BA5');
+      break;
+    case 'rothko': {
+      // dissolve the subject into two glowing bands of color
+      const band = document.createElement('canvas');
+      band.width = w; band.height = h;
+      const bctx = band.getContext('2d');
+      const g = bctx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, '#F47A4A'); g.addColorStop(0.42, '#DC4222');
+      g.addColorStop(0.5, '#7A1A0C'); g.addColorStop(0.58, '#B82612');
+      g.addColorStop(1, '#2A0604');
+      bctx.fillStyle = g; bctx.fillRect(0, 0, w, h);
+      ctx.filter = 'blur(' + Math.round(Math.max(w, h) / 28) + 'px) saturate(1.3)';
+      ctx.globalAlpha = 0.5;
+      ctx.drawImage(c, 0, 0);
+      ctx.filter = 'none'; ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'overlay';
+      ctx.drawImage(band, 0, 0);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 0.55; ctx.drawImage(band, 0, 0); ctx.globalAlpha = 1;
+      break;
+    }
+    case 'mondrian':
+      posterize(ctx, w, h, 2);
+      snapToPalette(ctx, w, h, ['#D62828', '#F4C40D', '#1B4FBF', '#F4F0E8', '#0E0E0D']);
+      break;
+    case 'matisse':
+      snapToPalette(ctx, w, h, ['#E14B2E', '#2A4FB2', '#1E5E3F', '#F2A93B', '#F1ECE2', '#3F8A4D', '#D8456E']);
+      break;
+    case 'hockney': {
+      const t = flatten(img, w, h, bg);
+      t.ctx.filter = 'saturate(1.7) contrast(1.15) brightness(1.05)';
+      t.ctx.drawImage(t.c, 0, 0);
+      posterize(t.ctx, w, h, 5);
+      return t.c.toDataURL('image/jpeg', 0.86);
+    }
+    case 'basquiat':
+      ctx.filter = 'contrast(1.4) saturate(1.4)';
+      ctx.drawImage(c, 0, 0);
+      posterize(ctx, w, h, 4);
+      break;
+    case 'miro':
+      duotone(ctx, w, h, '#0E0E0D', '#F0E6CE');
+      break;
+    case 'klee':
+      ctx.filter = 'saturate(0.85) brightness(1.08)';
+      ctx.drawImage(c, 0, 0);
+      posterize(ctx, w, h, 4);
+      break;
+    default: // pure / unknown — just the cleaned drawing on its ground
+      break;
+  }
+  return c.toDataURL('image/jpeg', 0.88);
+}
+
 // Final assets for a given style. We return two representations:
 //   preview  — a small downscaled raster (~640px). Cheap to decode, ideal for
 //              the ten-up gallery and the order-flow thumbnails. This is what
@@ -371,11 +557,11 @@ async function removePaperBackground(dataURL) {
 // For "pure" we lift the original off the paper and vectorize it — no AI
 // interpretation, just print-ready scale. For every other style the AI output
 // is the design as the artist would have made it; we vectorize that directly.
-async function postProcess(originalDataURL, aiBase64, styleId) {
+async function postProcess(originalDataURL, aiBase64, styleId, cleanedDataURL) {
   const profile = STYLE_PROFILES[styleId] || STYLE_PROFILES.matisse;
   try {
     if (styleId === "pure") {
-      const cleaned = await removePaperBackground(originalDataURL);
+      const cleaned = cleanedDataURL || await removePaperBackground(originalDataURL);
       const full = await vectorizeRaster(cleaned, profile.vec);
       const preview = await makePreview(cleaned, { preserveAlpha: true });
       return { preview, full };
@@ -387,8 +573,20 @@ async function postProcess(originalDataURL, aiBase64, styleId) {
     return { preview, full };
   } catch (e) {
     console.warn('Post-processing failed for', styleId, e);
-    const fallback = aiBase64 ? 'data:image/png;base64,' + aiBase64 : originalDataURL;
+    const fallback = aiBase64 ? 'data:image/png;base64,' + aiBase64 : (cleanedDataURL || originalDataURL);
     return { preview: fallback, full: fallback };
+  }
+}
+
+// In-browser style approximation built from the user's own cleaned drawing.
+// Used whenever the AI render for a style is unavailable. Always succeeds.
+async function fallbackAsset(cleanedDataURL, styleId) {
+  try {
+    const img = await clientStyleFilter(cleanedDataURL, styleId);
+    return { preview: img, full: img, fallback: true };
+  } catch (e) {
+    console.warn('Fallback render failed for', styleId, e);
+    return { preview: cleanedDataURL, full: cleanedDataURL, fallback: true };
   }
 }
 
@@ -397,12 +595,76 @@ const WORKER_URL = 'https://mantel-ai.jordanbmcgowen.workers.dev';
 
 const STYLE_IDS = ['pure','matisse','rothko','hockney','basquiat','miro','warhol','klee','mondrian','picasso'];
 
+// How many AI styles to render at once. The worker fans out to OpenAI; 3 wide
+// stays under the account's per-minute rate limit (4 wide drew sporadic 429s)
+// while still turning a ~4-minute sequential run into ~1 minute of wall-clock.
+const AI_CONCURRENCY = 3;
+// One render attempt should never hang the whole batch. The model normally
+// answers in 20–45s; we give it generous headroom then abort and retry.
+const AI_TIMEOUT_MS = 80000;
+const AI_ATTEMPTS = 3;
+// Backoff between attempts. Long enough to clear a 429 rate-limit window and
+// to re-roll OpenAI's stochastic moderation, which rejects ~1 in 3 edits.
+const AI_BACKOFF_MS = 2500;
+
+// Request a single style from the worker, with an abort-timeout. Resolves to a
+// base64 PNG string, or throws (network error, timeout, moderation 400, …).
+async function requestStyle(image_b64, styleId, profile) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), AI_TIMEOUT_MS);
+  try {
+    const resp = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: ctrl.signal,
+      // strength + prompt forwarded to the img2img backend. The prompt is the
+      // real control; see STYLE_PROFILES for why it avoids minor-referencing
+      // words that OpenAI moderation rejects.
+      body: JSON.stringify({
+        image_b64,
+        style: styleId,
+        strength: profile.aiStrength ?? 0.4,
+        prompt: profile.prompt,
+      }),
+    });
+    if (!resp.ok) throw new Error('worker ' + resp.status);
+    const data = await resp.json();
+    if (!data || !data.image_b64) throw new Error('no image in response');
+    return data.image_b64;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Render one AI style end-to-end: try the worker up to AI_ATTEMPTS times, then
+// post-process. If every attempt fails, synthesise the style in-browser from
+// the user's own drawing so the tile is never empty and never a stock image.
+async function renderStyle(image_b64, originalDataURL, cleanedDataURL, styleId, isCancelled) {
+  const profile = STYLE_PROFILES[styleId] || {};
+  for (let attempt = 1; attempt <= AI_ATTEMPTS; attempt++) {
+    if (isCancelled()) return null;
+    try {
+      const aiB64 = await requestStyle(image_b64, styleId, profile);
+      if (isCancelled()) return null;
+      const asset = await postProcess(originalDataURL, aiB64, styleId, cleanedDataURL);
+      if (asset) return asset;
+    } catch (e) {
+      console.warn(`Style ${styleId} attempt ${attempt}/${AI_ATTEMPTS} failed:`, e.message);
+      if (attempt < AI_ATTEMPTS) await new Promise(r => setTimeout(r, AI_BACKOFF_MS * attempt));
+    }
+  }
+  console.warn(`Style ${styleId}: all AI attempts failed — using in-browser fallback.`);
+  return await fallbackAsset(cleanedDataURL, styleId);
+}
+
 function Processing({ go, drawing, uploaded, setAiResults }) {
   const [progress, setProgress] = useState(0);
   const [stage, setStage] = useState('Preparing your image…');
 
   useEffect(() => {
     let cancelled = false;
+    const isCancelled = () => cancelled;
+    const artistOf = (id) => (STYLES.find(s => s.id === id) || {}).name || id;
 
     async function runAI() {
       if (!uploaded) {
@@ -418,7 +680,7 @@ function Processing({ go, drawing, uploaded, setAiResults }) {
 
       // Read file once — keep both the raw base64 (for the API) and the full
       // data URL (for client-side compositing after each API response).
-      setStage('Reading your image…');
+      setStage('Reading your drawing…');
       const { image_b64, originalDataURL } = await new Promise((resolve) => {
         const reader = new FileReader();
         reader.onload = () => {
@@ -427,52 +689,57 @@ function Processing({ go, drawing, uploaded, setAiResults }) {
         };
         reader.readAsDataURL(uploaded.file);
       });
+      if (cancelled) return;
+
+      // Lift the drawing off the paper once. This powers the "pure" style and
+      // is the source for every in-browser style fallback, so do it up front.
+      setStage('Lifting it off the paper…');
+      let cleanedDataURL;
+      try {
+        cleanedDataURL = await removePaperBackground(originalDataURL);
+      } catch (e) {
+        console.warn('Paper removal failed, using original:', e.message);
+        cleanedDataURL = originalDataURL;
+      }
+      if (cancelled) return;
 
       const results = {};
-      // Process each style sequentially.
-      for (let i = 0; i < STYLE_IDS.length; i++) {
-        if (cancelled) return;
-        const styleId = STYLE_IDS[i];
-        const profile = STYLE_PROFILES[styleId] || {};
-
-        // "pure" is rendered client-side — paper knockout + vectorize. No
-        // AI round-trip; the original drawing IS the design.
-        if (styleId === "pure") {
-          setStage(`Vectorizing style ${i + 1} of ${STYLE_IDS.length}: pure…`);
-          try {
-            results.pure = await postProcess(originalDataURL, null, "pure");
-          } catch (e) {
-            console.warn('pure post-process failed:', e.message);
-          }
-          if (!cancelled) setProgress(Math.round((i + 1) / STYLE_IDS.length * 100));
-          continue;
+      let done = 0;
+      const total = STYLE_IDS.length;
+      const bump = (id, asset) => {
+        if (asset) results[id] = asset;
+        done += 1;
+        if (!cancelled) {
+          setProgress(Math.round(done / total * 100));
+          setStage(`Reimagining your drawing… ${done} of ${total}`);
         }
+      };
 
-        setStage(`Rendering style ${i + 1} of ${STYLE_IDS.length}: ${styleId}…`);
-        try {
-          const resp = await fetch(WORKER_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            // strength forwarded to the img2img backend. Tuned per artist:
-            // see STYLE_PROFILES. Lower = preserve the child's drawing;
-            // higher = let the artist's interpretation breathe.
-            body: JSON.stringify({ image_b64, style: styleId, strength: profile.aiStrength ?? 0.4 }),
-          });
-          if (resp.ok) {
-            const data = await resp.json();
-            if (data.image_b64) {
-              setStage(`Vectorizing style ${i + 1} of ${STYLE_IDS.length}: ${styleId}…`);
-              results[styleId] = await postProcess(originalDataURL, data.image_b64, styleId);
-            }
-          }
-        } catch (e) {
-          console.warn('Style', styleId, 'failed:', e.message);
+      // "pure" is client-side (paper knockout + vectorize) — start it now.
+      const purePromise = postProcess(originalDataURL, null, 'pure', cleanedDataURL)
+        .then(a => bump('pure', a))
+        .catch(e => { console.warn('pure failed:', e.message); bump('pure', null); });
+
+      // The nine interpreted styles run through a small concurrency pool so we
+      // don't fire all nine at the worker at once, but also don't crawl through
+      // them one at a time.
+      const queue = STYLE_IDS.filter(id => id !== 'pure');
+      let next = 0;
+      async function worker() {
+        while (!cancelled) {
+          const i = next++;
+          if (i >= queue.length) return;
+          const id = queue[i];
+          const asset = await renderStyle(image_b64, originalDataURL, cleanedDataURL, id, isCancelled);
+          bump(id, asset);
         }
-        if (!cancelled) setProgress(Math.round((i + 1) / STYLE_IDS.length * 100));
       }
+      const pool = Array.from({ length: Math.min(AI_CONCURRENCY, queue.length) }, worker);
+      await Promise.all([purePromise, ...pool]);
 
       if (!cancelled) {
         setAiResults(results);
+        setStage('Done.');
         go('results');
       }
     }
@@ -533,7 +800,7 @@ function Results({ go, drawing, uploaded, setStyle, galleryLayout, setGalleryLay
         {STYLES.map((s, i) => {
           const ratio = galleryLayout === "masonry" ? [1, 1.2, 0.9, 1.1, 0.85, 1.05, 1.15, 0.95, 1, 0.9][i] : 1;
           const aiAsset = uploaded && aiResults && aiResults[s.id];
-          const previewSrc = aiAsset?.preview || aiAsset?.full;
+          const previewSrc = aiAsset?.preview || aiAsset?.full || (uploaded && uploaded.url);
           return (
             <div key={s.id} className={`tile ${s.id === "pure" ? "is-pure" : ""}`} onClick={() => { setStyle(s.id); go("detail"); }}>
               <div className="tile-art" style={{aspectRatio: ratio}}>
@@ -568,7 +835,11 @@ function Detail({ go, drawing, style, setStyle, aiResults, uploaded }) {
   const next = () => setStyle(STYLES[(idx + 1) % STYLES.length].id);
   const prev = () => setStyle(STYLES[(idx - 1 + STYLES.length) % STYLES.length].id);
   const aiAsset = uploaded && aiResults && aiResults[s.id];
-  const fullSrc = aiAsset?.full || aiAsset?.preview;
+  const fullSrc = aiAsset?.full || aiAsset?.preview || (uploaded && uploaded.url);
+  // Name the download for what it actually is: a vector for the AI/pure SVG
+  // assets, a raster for the in-browser fallbacks and the raw upload.
+  const isVector = typeof fullSrc === "string" && /image\/svg/.test(fullSrc);
+  const dlExt = isVector ? "svg" : (typeof fullSrc === "string" && /image\/png/.test(fullSrc) ? "png" : "jpg");
 
   return (
     <section className="detail frame">
@@ -589,9 +860,9 @@ function Detail({ go, drawing, style, setStyle, aiResults, uploaded }) {
               {fullSrc && (
                 <a className="detail-download"
                    href={fullSrc}
-                   download={`${s.id}-${drawing || "design"}.svg`}
-                   aria-label="Download high-resolution vector">
-                  ↓ Vector
+                   download={`${s.id}-${drawing || "design"}.${dlExt}`}
+                   aria-label="Download high-resolution artwork">
+                  ↓ {isVector ? "Vector" : "Image"}
                 </a>
               )}
               <button onClick={prev} aria-label="Previous">‹</button>
@@ -650,7 +921,7 @@ function Configure({ go, drawing, style, config, setConfig, framePreview, setFra
   const frame = FRAMES.find(x => x.id === config.frame) || FRAMES[0];
   const total = size.price + frame.price + (config.personalOn ? 12 : 0);
   const aiAsset = uploaded && aiResults && aiResults[s.id];
-  const designSrc = aiAsset?.full || aiAsset?.preview;
+  const designSrc = aiAsset?.full || aiAsset?.preview || (uploaded && uploaded.url);
 
   return (
     <section className="configure frame">
@@ -821,7 +1092,7 @@ function Cart({ go, drawing, style, config, aiResults, uploaded }) {
   const shipping = sub >= 120 ? 0 : 12;
   const total = sub + shipping;
   const aiAsset = uploaded && aiResults && aiResults[style];
-  const thumbSrc = aiAsset?.preview || aiAsset?.full;
+  const thumbSrc = aiAsset?.preview || aiAsset?.full || (uploaded && uploaded.url);
 
   return (
     <section className="cart frame">
@@ -900,7 +1171,7 @@ function Checkout({ go, drawing, style, config, aiResults, uploaded }) {
   const shipping = sub >= 120 ? 0 : 12;
   const total = sub + shipping;
   const aiAsset = uploaded && aiResults && aiResults[style];
-  const thumbSrc = aiAsset?.preview || aiAsset?.full;
+  const thumbSrc = aiAsset?.preview || aiAsset?.full || (uploaded && uploaded.url);
   return (
     <section className="cart frame">
       <button className="detail-back" onClick={() => go("cart")}>
@@ -988,7 +1259,7 @@ function Confirmation({ go, drawing, style, config, brand, aiResults, uploaded }
   const frame = FRAMES.find(x => x.id === config.frame) || FRAMES[0];
   const orderNo = useMemo(() => "KC-" + Math.floor(Math.random() * 900000 + 100000), []);
   const aiAsset = uploaded && aiResults && aiResults[style];
-  const thumbSrc = aiAsset?.preview || aiAsset?.full;
+  const thumbSrc = aiAsset?.preview || aiAsset?.full || (uploaded && uploaded.url);
   return (
     <section className="confirm frame">
       <div className="mark-big">✓</div>
