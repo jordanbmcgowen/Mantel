@@ -266,32 +266,39 @@ function loadImageFromSrc(src) {
 const STYLE_PROFILES = {
   pure:     { aiStrength: null, fallbackBg: "#F4F0E8",
               vec: { numberofcolors: 24, colorquantcycles: 4, pathomit: 6,  ltres: 0.4, qtres: 0.4, blurradius: 1, blurdelta: 14 } },
-  warhol:   { aiStrength: 0.25, fallbackBg: "#FFD23F",
-              prompt: "Transform this simple crayon picture into an Andy Warhol pop-art silkscreen: bold flat blocks of high-contrast saturated color, graphic screenprint look, slightly off-register.",
+  // Prompts are deliberately aggressive about MEDIUM and FORM-LANGUAGE, not
+  // just palette. The worker does a structure-preserving edit, so it keeps the
+  // subject roughly centred — but it WILL change material, brushwork, geometry
+  // and abstraction dramatically when told to, which is what makes each style
+  // read as a genuinely different treatment rather than a recolor.
+  warhol:   { aiStrength: 0.45, fallbackBg: "#FFD23F",
+              prompt: "Recreate this picture as an Andy Warhol pop-art silkscreen arranged as a 2x2 grid of four identical panels, each panel a different bold high-contrast color scheme (acid green, hot magenta, electric blue, lemon), flat screenprinted blocks of color with slightly off-register edges.",
               vec: { numberofcolors: 8,  colorquantcycles: 4, pathomit: 12, ltres: 0.8, qtres: 0.8, blurradius: 1, blurdelta: 14 } },
-  basquiat: { aiStrength: 0.30, fallbackBg: "#C8A877",
-              prompt: "Transform this simple crayon picture into a Jean-Michel Basquiat neo-expressionist painting: raw energetic oilstick marks on warm kraft paper, bold primary colors, a three-point crown motif, scrawled and untamed.",
+  basquiat: { aiStrength: 0.55, fallbackBg: "#C8A877",
+              prompt: "Recreate this picture as a Jean-Michel Basquiat neo-expressionist painting on warm kraft paper: raw frenetic oilstick and crayon scrawls, a bright yellow three-point crown, scribbled block-letter words, crossed-out marks, dense scratchy mark-making, bold primary colors, untamed and childlike-on-purpose.",
               vec: { numberofcolors: 28, colorquantcycles: 3, pathomit: 4,  ltres: 0.5, qtres: 0.5, blurradius: 1, blurdelta: 14 } },
-  hockney:  { aiStrength: 0.40, fallbackBg: "#3CB7B3",
-              prompt: "Transform this simple crayon picture into a David Hockney pop California scene: flat sunlit shapes, turquoise water, hot pink and bright yellow, clean graphic style with bold confident outlines.",
+  hockney:  { aiStrength: 0.55, fallbackBg: "#3CB7B3",
+              prompt: "Recreate this picture as a David Hockney pop artwork: flat planes of sunlit California color, turquoise pool water with wavy white ripple lines, hot pink and lemon yellow, a bleached cyan sky, crisp confident outlines, bright and graphic.",
               vec: { numberofcolors: 14, colorquantcycles: 4, pathomit: 10, ltres: 1.0, qtres: 1.0, blurradius: 2, blurdelta: 18 } },
-  picasso:  { aiStrength: 0.45, fallbackBg: "#0F1E3D",
-              prompt: "Transform this simple crayon picture into a Picasso Blue Period oil painting: everything rendered in deep melancholic blues and soft cyan, painterly brushwork, somber and tender.",
+  picasso:  { aiStrength: 0.6, fallbackBg: "#0F1E3D",
+              prompt: "Recreate this picture as a Picasso Blue Period cubist oil painting: the whole scene fractured into angular faceted planes, rendered entirely in deep melancholic blues, indigo and soft cyan, somber painterly oil brushwork, no other colors.",
               vec: { numberofcolors: 28, colorquantcycles: 4, pathomit: 6,  ltres: 0.6, qtres: 0.6, blurradius: 2, blurdelta: 18 } },
-  klee:     { aiStrength: 0.45, fallbackBg: "#D8C49A",
-              prompt: "Transform this simple crayon picture into a Paul Klee watercolor: a soft mosaic of pastel washed squares with a single thin ink line tracing the subject over the top, gentle and musical.",
+  klee:     { aiStrength: 0.7, fallbackBg: "#D8C49A",
+              prompt: "Recreate this picture in the manner of Paul Klee's 'Castle and Sun': dissolve the whole scene into a tessellated mosaic of small soft-edged colored squares and rectangles in warm earthy reds, ochres, teals and greens, gentle pencil borders, the subject barely emerging from the grid of tiles.",
               vec: { numberofcolors: 32, colorquantcycles: 4, pathomit: 6,  ltres: 0.5, qtres: 0.5, blurradius: 2, blurdelta: 18 } },
-  matisse:  { aiStrength: 0.55, fallbackBg: "#F1ECE2",
-              prompt: "Transform this simple crayon picture into a Henri Matisse paper cut-out collage: flat shapes of solid vermillion, cobalt blue, kelly green and gold torn from colored paper, no outlines, bold and joyful.",
+  matisse:  { aiStrength: 0.7, fallbackBg: "#F1ECE2",
+              prompt: "Recreate this picture as a Henri Matisse paper cut-out collage: simplified into a few bold flat organic shapes torn from solid colored paper — vermillion, cobalt blue, kelly green and gold — no outlines, no shading, no detail, just clean confident cut shapes floating on a warm ground.",
               vec: { numberofcolors: 10, colorquantcycles: 4, pathomit: 14, ltres: 1.2, qtres: 1.2, blurradius: 3, blurdelta: 20 } },
-  miro:     { aiStrength: 0.70, fallbackBg: "#F0E6CE",
-              prompt: "Transform this simple crayon picture into a Joan Miro painting: playful biomorphic shapes, thin black connecting lines, stars and dots, primary red blue and yellow on a soft cream ground, dreamlike.",
+  miro:     { aiStrength: 0.85, fallbackBg: "#F0E6CE",
+              prompt: "Reinvent this picture freely as a Joan Miro surrealist painting: loose playful biomorphic blobs and amoeba shapes, thin curved black connecting lines, scattered black dots, stars and a crescent moon, bold primary red blue yellow accents on a soft warm cream ground. Abstract and dreamlike — do not copy the original layout, just keep its spirit.",
               vec: { numberofcolors: 10, colorquantcycles: 4, pathomit: 12, ltres: 1.0, qtres: 1.0, blurradius: 2, blurdelta: 18 } },
-  mondrian: { aiStrength: 0.80, fallbackBg: "#F4F0E8",
-              prompt: "Transform this simple picture into a Piet Mondrian De Stijl composition: bold rectangles of primary red, yellow and blue on white, divided by thick black lines, geometric and clean.",
+  mondrian: { aiStrength: 0.85, fallbackBg: "#F4F0E8",
+              prompt: "Reinvent this picture as a Piet Mondrian De Stijl composition: an asymmetric grid of bold rectangles in primary red, yellow and blue plus white, separated by thick black ruled lines. Geometric, flat and abstract — keep only a faint echo of the original arrangement.",
               vec: { numberofcolors: 5,  colorquantcycles: 3, pathomit: 20, ltres: 2.0, qtres: 2.0, blurradius: 4, blurdelta: 24 } },
-  rothko:   { aiStrength: 0.85, fallbackBg: "#2A0604",
-              prompt: "Transform this simple picture into a Mark Rothko color field painting: two large soft-edged horizontal bands of glowing color, hazy and atmospheric, the subject dissolved into pure color.",
+  // Rothko is rendered client-side as a true abstract color field — the
+  // edit model refuses to dissolve the subject (it just blurs it), so we
+  // synthesize the bands ourselves. No prompt / AI call. See renderStyle.
+  rothko:   { aiStrength: null, fallbackBg: "#2A0604", clientOnly: true,
               vec: { numberofcolors: 48, colorquantcycles: 5, pathomit: 2,  ltres: 0.5, qtres: 0.5, blurradius: 5, blurdelta: 24 } },
 };
 
@@ -462,6 +469,119 @@ function snapToPalette(ctx, w, h, palette) {
   ctx.putImageData(id, 0, 0);
 }
 
+// Pull the most common opaque colors out of the drawing (skipping paper
+// remnants), averaged per bucket and sorted dark→light. Lets the abstract
+// fallbacks (Rothko fields) stay tied to the actual palette of the upload.
+function sampleColors(img, n = 3) {
+  const s = 64;
+  const cv = document.createElement('canvas'); cv.width = s; cv.height = s;
+  const cx = cv.getContext('2d'); cx.drawImage(img, 0, 0, s, s);
+  const p = cx.getImageData(0, 0, s, s).data;
+  const buckets = new Map();
+  for (let i = 0; i < p.length; i += 4) {
+    if (p[i + 3] < 128) continue;
+    const r = p[i], g = p[i + 1], b = p[i + 2];
+    if (r > 232 && g > 228 && b > 220) continue;            // near-white paper
+    const key = ((r >> 5) << 6) | ((g >> 5) << 3) | (b >> 5);
+    const e = buckets.get(key) || [0, 0, 0, 0];
+    e[0] += r; e[1] += g; e[2] += b; e[3]++; buckets.set(key, e);
+  }
+  let arr = [...buckets.values()].filter(e => e[3] > 1)
+    .sort((a, b) => b[3] - a[3]).slice(0, Math.max(n, 3))
+    .map(e => [Math.round(e[0] / e[3]), Math.round(e[1] / e[3]), Math.round(e[2] / e[3])]);
+  if (!arr.length) arr = [[180, 70, 50], [60, 90, 150], [230, 200, 90]];
+  arr.sort((a, b) => (0.299 * a[0] + 0.587 * a[1] + 0.114 * a[2]) - (0.299 * b[0] + 0.587 * b[1] + 0.114 * b[2]));
+  const hex = arr.map(([r, g, b]) => '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join(''));
+  while (hex.length < n) hex.push(hex[hex.length - 1]);
+  return hex;
+}
+
+// Lighten (f>0) or darken (f<0) a hex color toward white/black.
+function shade(hex, f) {
+  const [r, g, b] = hexToRGB(hex);
+  const m = (v) => f < 0 ? Math.round(v * (1 + f)) : Math.round(v + (255 - v) * f);
+  return `rgb(${m(r)},${m(g)},${m(b)})`;
+}
+
+// Rasterize an SVG (authored in a 0–100 coordinate space) over the canvas.
+// This is how each fallback gets its signature *structure* — Matisse cut-outs,
+// Mondrian rules, a Basquiat crown, Miró's constellation — on top of the
+// recolored drawing, so the tiles read as different treatments, not recolors.
+async function overlaySVG(ctx, inner, w, h, alpha = 1) {
+  const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 100 100" preserveAspectRatio="none">${inner}</svg>`);
+  const im = await loadImageFromSrc(url);
+  ctx.globalAlpha = alpha;
+  ctx.drawImage(im, 0, 0, w, h);
+  ctx.globalAlpha = 1;
+}
+
+const DECO = {
+  matisse: `
+    <path d="M -2 14 q 8 -16 24 -6 q 10 12 -4 22 q -14 8 -22 -2 z" fill="#2A4FB2"/>
+    <g transform="translate(84 82)"><circle r="11" fill="#F2A93B"/><circle r="7" fill="#F1ECE2"/><circle r="4" fill="#F2A93B"/></g>
+    <path d="M84 4 q 6 4 4 12 q -6 4 -10 -2 q 0 -8 6 -10 z" fill="#E14B2E"/>
+    <path d="M-2 86 q 14 -10 28 0 q 8 8 -4 14 q -16 4 -24 -4 z" fill="#1E5E3F"/>`,
+  picasso: `
+    <g stroke="rgba(232,238,250,0.28)" stroke-width="0.5" fill="none">
+      <polygon points="0,30 38,18 50,52 14,68"/>
+      <polygon points="55,40 100,28 100,72 60,80"/>
+      <polygon points="20,72 60,84 50,100 8,98"/>
+      <polygon points="38,18 72,6 86,40 50,52"/>
+      <path d="M50 0 L 52 100 M0 50 L 100 54"/>
+    </g>`,
+  mondrian: `
+    <g stroke="#0E0E0D" stroke-width="4.5" stroke-linecap="square" fill="none">
+      <line x1="34" y1="0" x2="34" y2="100"/>
+      <line x1="68" y1="0" x2="68" y2="100"/>
+      <line x1="0" y1="40" x2="100" y2="40"/>
+      <line x1="0" y1="74" x2="68" y2="74"/>
+      <rect x="2" y="2" width="96" height="96"/>
+    </g>`,
+  hockney: `
+    <circle cx="80" cy="16" r="9" fill="#FFE23F"/>
+    <g stroke="#FFFFFF" stroke-width="1.1" fill="none" opacity="0.85" stroke-linecap="round">
+      <path d="M2 85 q 4 -4 8 0 t 8 0 t 8 0 t 8 0 t 8 0 t 8 0 t 8 0 t 8 0 t 8 0 t 8 0 t 8 0 t 8 0"/>
+      <path d="M2 91 q 4 -4 8 0 t 8 0 t 8 0 t 8 0 t 8 0 t 8 0 t 8 0 t 8 0 t 8 0 t 8 0 t 8 0 t 8 0"/>
+    </g>`,
+  basquiat: `
+    <g transform="translate(50 6)" stroke="#0E0604" stroke-width="0.6" stroke-linejoin="round">
+      <path d="M -11 9 L -7 0 L 0 7 L 7 0 L 11 9 Z" fill="#F4C40D"/>
+    </g>
+    <text x="4" y="13" font-family="monospace" font-size="7" fill="#0E0604" font-weight="700">UNTITLED</text>
+    <line x1="4" y1="14.6" x2="44" y2="14.6" stroke="#0E0604" stroke-width="0.7"/>
+    <text x="62" y="96" font-family="monospace" font-size="5.5" fill="#C72A1C" font-weight="700">SAMO</text>
+    <g stroke="#0E0604" stroke-width="0.55" fill="none" opacity="0.85">
+      <path d="M6 44 l 10 9 M16 44 l -10 9"/>
+      <path d="M88 28 q 4 -2 4 2 q 0 4 -4 4 q -6 0 -6 -6 q 0 -8 8 -8"/>
+      <path d="M4 64 l 7 -2 M90 72 l 6 -2"/>
+    </g>`,
+  miro: `
+    <g stroke="#0E0E0D" stroke-width="0.5" fill="none">
+      <path d="M14 18 q 16 14 30 4 q 12 -14 38 -2"/>
+      <path d="M8 60 q 24 -10 36 6 q 16 18 42 4"/>
+      <path d="M82 22 q -8 24 6 50"/>
+    </g>
+    <circle cx="14" cy="18" r="5" fill="#D62828"/><circle cx="14" cy="18" r="1.6" fill="#0E0E0D"/>
+    <path d="M44 22 q 4 -8 10 -2 q 4 8 -4 10 q -10 0 -6 -8 z" fill="#1B4FBF"/>
+    <circle cx="82" cy="22" r="3.5" fill="#0E0E0D"/>
+    <path d="M8 60 q 5 -3 8 2 q 1 7 -6 7 q -8 -2 -2 -9 z" fill="#F4C40D"/>
+    <path d="M88 78 q 6 -4 10 4 q 2 10 -8 8 q -10 -4 -2 -12 z" fill="#1B4FBF"/>
+    <g fill="#D62828"><path d="M50 8 l 1 2 l 2 1 l -2 1 l -1 2 l -1 -2 l -2 -1 l 2 -1 z"/></g>
+    <g fill="#0E0E0D"><circle cx="30" cy="40" r="1"/><circle cx="66" cy="30" r="1.2"/><circle cx="58" cy="74" r="1"/><circle cx="26" cy="84" r="1.1"/><circle cx="90" cy="56" r="1"/></g>
+    <path d="M76 90 a 4 4 0 1 0 -3 -7 a 6 6 0 0 1 3 7" fill="#0E0E0D"/>`,
+};
+
+// A 10×10 lattice of thin tile borders — turns a posterized image into Klee's
+// mosaic of cells.
+function kleeMosaic() {
+  let cells = '';
+  const n = 11, step = 100 / n;
+  for (let y = 0; y <= n; y++) cells += `<line x1="0" y1="${(y * step).toFixed(2)}" x2="100" y2="${(y * step).toFixed(2)}" stroke="rgba(40,28,16,0.4)" stroke-width="0.4"/>`;
+  for (let x = 0; x <= n; x++) cells += `<line x1="${(x * step).toFixed(2)}" y1="0" x2="${(x * step).toFixed(2)}" y2="100" stroke="rgba(40,28,16,0.4)" stroke-width="0.4"/>`;
+  return cells;
+}
+
 async function clientStyleFilter(cleanedDataURL, styleId, { maxDim = 1024 } = {}) {
   const img = await loadImageFromSrc(cleanedDataURL);
   const iw = img.naturalWidth || maxDim, ih = img.naturalHeight || maxDim;
@@ -475,77 +595,98 @@ async function clientStyleFilter(cleanedDataURL, styleId, { maxDim = 1024 } = {}
     out.width = w; out.height = h;
     const octx = out.getContext('2d');
     const pairs = [
-      ['#C72A1C', '#FFD23F'], ['#0E2A52', '#3CB7B3'],
-      ['#1a0a1a', '#FF6B6B'], ['#0E0E0D', '#FFD23F'],
+      ['#C72A1C', '#A4D11E'], ['#0E2A52', '#F03AA0'],
+      ['#1a0a1a', '#22A7E0'], ['#0E0E0D', '#FFD23F'],
     ];
     const cw = Math.floor(w / 2), ch = Math.floor(h / 2);
     pairs.forEach((pair, i) => {
       const { c, ctx } = flatten(img, w, h, '#fff');
-      ctx.filter = 'contrast(1.2)';
-      ctx.drawImage(c, 0, 0);
-      duotone(ctx, w, h, pair[0], pair[1]);
-      octx.drawImage(c, (i % 2) * cw, Math.floor(i / 2) * ch, cw, ch);
+      const t = document.createElement('canvas'); t.width = w; t.height = h;
+      const tctx = t.getContext('2d'); tctx.filter = 'contrast(1.25)'; tctx.drawImage(c, 0, 0);
+      duotone(tctx, w, h, pair[0], pair[1]);
+      octx.drawImage(t, (i % 2) * cw, Math.floor(i / 2) * ch, cw, ch);
     });
     return out.toDataURL('image/jpeg', 0.86);
   }
 
-  const { c, ctx } = flatten(img, w, h, bg);
+  // Output canvas + an unfiltered source copy of the flattened drawing, so
+  // filtered draws never read a canvas while writing to it.
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  const src = document.createElement('canvas'); src.width = w; src.height = h;
+  const sctx = src.getContext('2d');
+  sctx.fillStyle = bg; sctx.fillRect(0, 0, w, h); sctx.drawImage(img, 0, 0, w, h);
+
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
 
   switch (styleId) {
+    case 'matisse':
+      // merge detail into bold flat shapes, snap to gouache palette, add cut-outs
+      ctx.filter = `blur(${Math.max(1, Math.round(w / 140))}px)`;
+      ctx.drawImage(src, 0, 0); ctx.filter = 'none';
+      snapToPalette(ctx, w, h, ['#E14B2E', '#2A4FB2', '#1E5E3F', '#F2A93B', '#F1ECE2', '#3F8A4D']);
+      await overlaySVG(ctx, DECO.matisse, w, h, 0.95);
+      break;
     case 'picasso':
+      ctx.drawImage(src, 0, 0);
       duotone(ctx, w, h, '#08152E', '#A8C5E8', '#3F6BA5');
+      await overlaySVG(ctx, DECO.picasso, w, h, 0.9);
       break;
-    case 'rothko': {
-      // dissolve the subject into two glowing bands of color
-      const band = document.createElement('canvas');
-      band.width = w; band.height = h;
-      const bctx = band.getContext('2d');
-      const g = bctx.createLinearGradient(0, 0, 0, h);
-      g.addColorStop(0, '#F47A4A'); g.addColorStop(0.42, '#DC4222');
-      g.addColorStop(0.5, '#7A1A0C'); g.addColorStop(0.58, '#B82612');
-      g.addColorStop(1, '#2A0604');
-      bctx.fillStyle = g; bctx.fillRect(0, 0, w, h);
-      ctx.filter = 'blur(' + Math.round(Math.max(w, h) / 28) + 'px) saturate(1.3)';
-      ctx.globalAlpha = 0.5;
-      ctx.drawImage(c, 0, 0);
-      ctx.filter = 'none'; ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = 'overlay';
-      ctx.drawImage(band, 0, 0);
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.globalAlpha = 0.55; ctx.drawImage(band, 0, 0); ctx.globalAlpha = 1;
-      break;
-    }
     case 'mondrian':
+      ctx.drawImage(src, 0, 0);
       posterize(ctx, w, h, 2);
       snapToPalette(ctx, w, h, ['#D62828', '#F4C40D', '#1B4FBF', '#F4F0E8', '#0E0E0D']);
+      await overlaySVG(ctx, DECO.mondrian, w, h, 1);
       break;
-    case 'matisse':
-      snapToPalette(ctx, w, h, ['#E14B2E', '#2A4FB2', '#1E5E3F', '#F2A93B', '#F1ECE2', '#3F8A4D', '#D8456E']);
+    case 'rothko': {
+      // a true color field — abstract bands sampled from the drawing's palette
+      const cols = sampleColors(img, 3);
+      const cTop = cols[cols.length - 1], cMid = cols[Math.floor(cols.length / 2)], cBot = cols[0];
+      const tmp = document.createElement('canvas'); tmp.width = w; tmp.height = h;
+      const tctx = tmp.getContext('2d');
+      tctx.fillStyle = shade(cBot, -0.5); tctx.fillRect(0, 0, w, h);
+      let g = tctx.createLinearGradient(0, h * 0.08, 0, h * 0.46);
+      g.addColorStop(0, shade(cTop, 0.18)); g.addColorStop(1, cTop);
+      tctx.fillStyle = g; tctx.fillRect(w * 0.06, h * 0.08, w * 0.88, h * 0.36);
+      g = tctx.createLinearGradient(0, h * 0.52, 0, h * 0.92);
+      g.addColorStop(0, cMid); g.addColorStop(1, shade(cBot, -0.25));
+      tctx.fillStyle = g; tctx.fillRect(w * 0.06, h * 0.52, w * 0.88, h * 0.4);
+      ctx.filter = `blur(${Math.round(Math.max(w, h) / 22)}px)`;
+      ctx.drawImage(tmp, 0, 0); ctx.filter = 'none';
       break;
-    case 'hockney': {
-      const t = flatten(img, w, h, bg);
-      t.ctx.filter = 'saturate(1.7) contrast(1.15) brightness(1.05)';
-      t.ctx.drawImage(t.c, 0, 0);
-      posterize(t.ctx, w, h, 5);
-      return t.c.toDataURL('image/jpeg', 0.86);
     }
+    case 'hockney':
+      ctx.filter = 'saturate(1.7) contrast(1.12) brightness(1.05)';
+      ctx.drawImage(src, 0, 0); ctx.filter = 'none';
+      posterize(ctx, w, h, 5);
+      await overlaySVG(ctx, DECO.hockney, w, h, 0.92);
+      break;
     case 'basquiat':
-      ctx.filter = 'contrast(1.4) saturate(1.4)';
-      ctx.drawImage(c, 0, 0);
+      ctx.filter = 'contrast(1.45) saturate(1.4)';
+      ctx.drawImage(src, 0, 0); ctx.filter = 'none';
       posterize(ctx, w, h, 4);
+      await overlaySVG(ctx, DECO.basquiat, w, h, 1);
       break;
-    case 'miro':
-      duotone(ctx, w, h, '#0E0E0D', '#F0E6CE');
+    case 'miro': {
+      // faint silhouette of the drawing under a Miró constellation
+      const sil = document.createElement('canvas'); sil.width = w; sil.height = h;
+      const silc = sil.getContext('2d'); silc.drawImage(src, 0, 0);
+      duotone(silc, w, h, '#6E5A3C', bg);
+      ctx.globalAlpha = 0.32; ctx.drawImage(sil, 0, 0); ctx.globalAlpha = 1;
+      await overlaySVG(ctx, DECO.miro, w, h, 1);
       break;
+    }
     case 'klee':
-      ctx.filter = 'saturate(0.85) brightness(1.08)';
-      ctx.drawImage(c, 0, 0);
-      posterize(ctx, w, h, 4);
+      ctx.filter = 'saturate(0.92) brightness(1.05)';
+      ctx.drawImage(src, 0, 0); ctx.filter = 'none';
+      posterize(ctx, w, h, 5);
+      await overlaySVG(ctx, kleeMosaic(), w, h, 1);
       break;
     default: // pure / unknown — just the cleaned drawing on its ground
+      ctx.drawImage(src, 0, 0);
       break;
   }
-  return c.toDataURL('image/jpeg', 0.88);
+  return c.toDataURL('image/jpeg', 0.9);
 }
 
 // Final assets for a given style. We return two representations:
@@ -641,6 +782,9 @@ async function requestStyle(image_b64, styleId, profile) {
 // the user's own drawing so the tile is never empty and never a stock image.
 async function renderStyle(image_b64, originalDataURL, cleanedDataURL, styleId, isCancelled) {
   const profile = STYLE_PROFILES[styleId] || {};
+  // Some styles (Rothko) are abstractions the edit model can't perform — it
+  // only blurs the subject. Render those purely in-browser, no AI round-trip.
+  if (profile.clientOnly) return await fallbackAsset(cleanedDataURL, styleId);
   for (let attempt = 1; attempt <= AI_ATTEMPTS; attempt++) {
     if (isCancelled()) return null;
     try {
