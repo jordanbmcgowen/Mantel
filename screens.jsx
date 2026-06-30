@@ -275,26 +275,26 @@ const STYLE_PROFILES = {
   // generic recolor to a rich, gallery-quality painting. Strengths are tuned
   // up so the model genuinely elaborates rather than lightly tinting.
   warhol:   { aiStrength: 0.62, fallbackBg: "#FFD23F",
-              prompt: "Recreate this picture as an Andy Warhol pop-art silkscreen in the spirit of his Marilyn series, arranged as a 2x2 grid of four identical panels, each panel a boldly different high-contrast color scheme (acid green with pink, hot magenta with orange, electric blue with yellow, black with red), flat screenprinted blocks of saturated color, visible halftone dot texture and slightly off-register edges. Iconic, graphic, vivid.",
+              prompt: "Recreate this picture as an Andy Warhol pop-art silkscreen in the spirit of his Marilyn series, arranged as a 2x2 grid of four identical panels, each panel a boldly different high-contrast color scheme (acid green with pink, hot magenta with orange, electric blue with yellow, black with red), flat screenprinted blocks of saturated color, bold thick black outlines, visible halftone dot texture and slightly off-register edges. Iconic, graphic, high-contrast, vivid.",
               vec: { numberofcolors: 8,  colorquantcycles: 4, pathomit: 12, ltres: 0.8, qtres: 0.8, blurradius: 1, blurdelta: 14 } },
   basquiat: { aiStrength: 0.72, fallbackBg: "#C8A877",
               prompt: "Recreate this picture as a museum-quality Jean-Michel Basquiat neo-expressionist painting on weathered kraft paper: raw frenetic oilstick and wax crayon scrawls, a bright yellow three-point crown, scribbled and crossed-out block-letter words, copyright marks, dense layered scratchy mark-making, drips and smears, bold primary colors over the whole canvas, urgent and untamed.",
               vec: { numberofcolors: 28, colorquantcycles: 3, pathomit: 4,  ltres: 0.5, qtres: 0.5, blurradius: 1, blurdelta: 14 } },
   hockney:  { aiStrength: 0.68, fallbackBg: "#3CB7B3",
-              prompt: "Recreate this picture as a luminous David Hockney acrylic painting in his sunlit California style: broad flat planes of bright color, turquoise water with wavy white ripple lines, palm-frond shapes, a bleached cyan sky, hot pink and lemon yellow accents, crisp confident edges, airy and graphic. Rich, vivid, high quality.",
+              prompt: "Recreate this picture as a luminous David Hockney acrylic painting in his sunlit California style: broad flat planes of bright color, turquoise water with wavy white ripple lines, palm-frond shapes, a bleached cyan sky, hot pink and lemon yellow accents, bold thick confident black outlines and crisp high-contrast edges, airy and graphic. Rich, vivid, high quality.",
               vec: { numberofcolors: 14, colorquantcycles: 4, pathomit: 10, ltres: 1.0, qtres: 1.0, blurradius: 2, blurdelta: 18 } },
   picasso:  { aiStrength: 0.82, fallbackBg: "#0F1E3D",
               postTint: { dark: "#070F26", mid: "#2B5590", light: "#CFE0F4" },
               prompt: "Recreate this picture as a richly textured Picasso cubist oil painting: the whole scene fractured into overlapping angular faceted planes, with visible impasto brushwork, layered translucent glazes, bold black contour lines and dramatic chiaroscuro depth. Somber, atmospheric and museum-quality, every inch of the canvas activated.",
               vec: { numberofcolors: 28, colorquantcycles: 4, pathomit: 6,  ltres: 0.6, qtres: 0.6, blurradius: 2, blurdelta: 18 } },
   klee:     { aiStrength: 0.82, fallbackBg: "#D8C49A",
-              prompt: "Recreate this picture in the manner of Paul Klee's 'Castle and Sun': dissolve the whole scene into a rich tessellated mosaic of small soft-edged colored squares and rectangles in warm reds, ochres, teals, golds and greens, each tile a slightly different hand-mixed watercolor wash with visible pigment grain, gentle pencil borders, the subject gently emerging from the field of tiles. Layered, luminous, painterly.",
+              prompt: "Recreate this picture in the manner of Paul Klee's 'Castle and Sun': dissolve the whole scene into a rich tessellated mosaic of small soft-edged colored squares and rectangles in warm reds, ochres, teals, golds and greens, each tile a slightly different hand-mixed watercolor wash with visible pigment grain, bold dark tile borders and strong contrast, the subject gently emerging from the field of tiles. Layered, luminous, painterly.",
               vec: { numberofcolors: 32, colorquantcycles: 4, pathomit: 6,  ltres: 0.5, qtres: 0.5, blurradius: 2, blurdelta: 18 } },
   matisse:  { aiStrength: 0.78, fallbackBg: "#F1ECE2",
               prompt: "Recreate this picture as a vibrant Henri Matisse paper cut-out collage in the spirit of 'Jazz' and 'The Snail': bold overlapping organic shapes torn from richly colored paper — vermillion, cobalt, kelly green, gold and magenta — with a few scattered leaf and star cut-out accents giving the composition rhythm, visible torn deckled paper edges and paper grain, no outlines. Joyful, dynamic, gallery-quality.",
               vec: { numberofcolors: 10, colorquantcycles: 4, pathomit: 14, ltres: 1.2, qtres: 1.2, blurradius: 3, blurdelta: 20 } },
   miro:     { aiStrength: 0.9, fallbackBg: "#F0E6CE",
-              prompt: "Reinvent this picture freely as a Joan Miro surrealist painting in the spirit of 'The Tilled Field' and his Constellations: loose playful biomorphic blobs and amoeba shapes, thin sweeping black calligraphic lines, scattered black dots, stars and a crescent moon, bold primary red blue and yellow accents on a soft warm cream ground with subtle painterly washes. Abstract, lyrical and dreamlike — do not copy the original layout, keep only its spirit.",
+              prompt: "Reinvent this picture freely as a Joan Miro surrealist painting in the spirit of 'The Tilled Field' and his Constellations: loose playful biomorphic blobs and amoeba shapes, bold thick confident black calligraphic lines, scattered black dots, stars and a crescent moon, strong high-contrast primary red blue and yellow accents on a soft warm cream ground with subtle painterly washes. Abstract, lyrical and dreamlike — do not copy the original layout, keep only its spirit.",
               vec: { numberofcolors: 10, colorquantcycles: 4, pathomit: 12, ltres: 1.0, qtres: 1.0, blurradius: 2, blurdelta: 18 } },
   mondrian: { aiStrength: 0.88, fallbackBg: "#F4F0E8",
               prompt: "Reinvent this picture as a Piet Mondrian De Stijl composition in the spirit of 'Composition with Red, Blue and Yellow': an asymmetric grid of bold rectangles in pure primary red, yellow and blue plus crisp white, separated by thick confident black ruled lines, with the subtle canvas texture of an oil painting. Geometric, balanced, flat and abstract — keep only a faint echo of the original arrangement.",
@@ -398,50 +398,223 @@ async function removePaperBackground(dataURL) {
   return canvas.toDataURL('image/png');
 }
 
-// Flatten the lighting of a phone photo before anything else touches it.
-// A drawing shot on a table almost always has a soft shadow gradient or warm
-// cast across the page; the AI reads that gradient as real color/tone and bakes
-// it into the painting. We estimate the paper illumination with a heavy blur,
-// then divide it back out (per-pixel gain toward a white target). Broad shadows
-// and color casts disappear, the paper goes clean white, and the crayon colors
-// stay saturated — so the model interprets the marks, not the lighting.
-async function normalizeDrawing(dataURL, { maxDim = 1280 } = {}) {
-  const img = await loadImageFromSrc(dataURL);
-  const w0 = img.naturalWidth || maxDim, h0 = img.naturalHeight || maxDim;
-  const scale = Math.min(1, maxDim / Math.max(w0, h0));
-  const w = Math.max(1, Math.round(w0 * scale)), h = Math.max(1, Math.round(h0 * scale));
+// Thicken and deepen the dark marks in a canvas with a separable minimum
+// (darkening) filter — each pixel takes the darkest value in a small
+// neighborhood, so thin strokes grow and faint ones gain weight. `radius` in
+// pixels; `amount` 0..1 blends the bolded result back over the original so the
+// effect can be subtle. Colored fills are barely touched; lines get bolder.
+function boldenLines(ctx, w, h, radius = 1, amount = 1) {
+  if (radius < 1) return;
+  const id = ctx.getImageData(0, 0, w, h);
+  const p = id.data;
+  const tmp = new Uint8ClampedArray(p.length);
+  // horizontal min
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const o = (y * w + x) * 4;
+      for (let k = 0; k < 3; k++) {
+        let m = 255;
+        for (let dx = -radius; dx <= radius; dx++) {
+          const xx = x + dx; if (xx < 0 || xx >= w) continue;
+          const v = p[(y * w + xx) * 4 + k]; if (v < m) m = v;
+        }
+        tmp[o + k] = m;
+      }
+      tmp[o + 3] = p[o + 3];
+    }
+  }
+  // vertical min, blended back by `amount`
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const o = (y * w + x) * 4;
+      for (let k = 0; k < 3; k++) {
+        let m = 255;
+        for (let dy = -radius; dy <= radius; dy++) {
+          const yy = y + dy; if (yy < 0 || yy >= h) continue;
+          const v = tmp[((yy * w + x) * 4) + k]; if (v < m) m = v;
+        }
+        p[o + k] = Math.round(p[o + k] * (1 - amount) + m * amount);
+      }
+    }
+  }
+  ctx.putImageData(id, 0, 0);
+}
 
+// Clean up a photo of a drawing before anything else touches it. Two jobs:
+//   1. Flatten the lighting. A phone photo has a shadow gradient / warm cast
+//      across the page; without this the model reads that as real tone.
+//   2. Rescue the linework. Faint pencil or thin pen sits only just below the
+//      paper value — a naive "push to white" (what we did before) erases it.
+//      Instead we measure the paper level and the ink level from the image's
+//      own histogram and stretch *between* them: paper clips to clean white,
+//      the marks are driven dark and high-contrast, and a light thickening
+//      pass gives thin strokes real weight. Works for faint line art and for
+//      saturated crayon alike, because the stretch is per-image adaptive.
+// Find the bright paper rectangle inside a photo so we can crop the table /
+// floor away. We mark bright pixels, then keep the band of rows and columns
+// that are mostly bright (the page) — isolated glare can't pass the per-line
+// fraction test. Returns null when there's no clear page (a full-bleed scan).
+function detectPaperBBox(data, w, h) {
+  const colF = new Float32Array(w), rowF = new Float32Array(h);
+  for (let y = 0; y < h; y++) {
+    let rc = 0;
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      if (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2] > 185) { colF[x]++; rc++; }
+    }
+    rowF[y] = rc / w;
+  }
+  for (let x = 0; x < w; x++) colF[x] /= h;
+  const span = (arr, thr) => {
+    let a = 0, b = arr.length - 1;
+    while (a < arr.length && arr[a] < thr) a++;
+    while (b >= 0 && arr[b] < thr) b--;
+    return [a, b];
+  };
+  const [x0, x1] = span(colF, 0.35), [y0, y1] = span(rowF, 0.35);
+  if (x1 <= x0 || y1 <= y0) return null;
+  const aw = x1 - x0, ah = y1 - y0;
+  if (aw * ah < 0.2 * w * h) return null;             // too small to trust
+  if (aw > 0.97 * w && ah > 0.97 * h) return null;    // already full-frame
+  const mx = Math.round(aw * 0.015), my = Math.round(ah * 0.015);
+  return { x: Math.max(0, x0 - mx), y: Math.max(0, y0 - my),
+           w: Math.min(w, x1 + mx) - Math.max(0, x0 - mx),
+           h: Math.min(h, y1 + my) - Math.max(0, y0 - my) };
+}
+
+async function normalizeDrawing(dataURL, { maxDim = 1400, bolden = true } = {}) {
+  const img = await loadImageFromSrc(dataURL);
+  const iw = img.naturalWidth || maxDim, ih = img.naturalHeight || maxDim;
+  const iscale = Math.min(1, maxDim / Math.max(iw, ih));
+  const fw = Math.max(1, Math.round(iw * iscale)), fh = Math.max(1, Math.round(ih * iscale));
+
+  // First draw the whole frame and crop to the page if there's table around it.
+  const full = document.createElement('canvas'); full.width = fw; full.height = fh;
+  const fctx = full.getContext('2d');
+  fctx.drawImage(img, 0, 0, fw, fh);
+  const box = detectPaperBBox(fctx.getImageData(0, 0, fw, fh).data, fw, fh)
+              || { x: 0, y: 0, w: fw, h: fh };
+
+  const w = box.w, h = box.h;
   const c = document.createElement('canvas'); c.width = w; c.height = h;
   const ctx = c.getContext('2d');
-  ctx.drawImage(img, 0, 0, w, h);
+  ctx.drawImage(full, box.x, box.y, w, h, 0, 0, w, h);
   const src = ctx.getImageData(0, 0, w, h);
   const sp = src.data;
 
-  // Illumination estimate: a strongly blurred grayscale copy. The blur radius
-  // is large relative to the image so it captures the lighting gradient, not
-  // the drawing's own edges.
+  // Illumination estimate: a strongly blurred grayscale copy captures the
+  // lighting gradient, not the drawing's edges.
   const bgc = document.createElement('canvas'); bgc.width = w; bgc.height = h;
   const bctx = bgc.getContext('2d');
-  bctx.filter = `grayscale(1) blur(${Math.max(2, Math.round(Math.max(w, h) / 7))}px)`;
+  bctx.filter = `grayscale(1) blur(${Math.max(2, Math.round(Math.max(w, h) / 8))}px)`;
   bctx.drawImage(c, 0, 0);
   bctx.filter = 'none';
   const bg = bctx.getImageData(0, 0, w, h).data;
 
+  // Pass 1 — divide out the illumination so the paper is a uniform tone, and
+  // build a luminance histogram of the flattened result.
+  const flat = new Float32Array((sp.length / 4) * 3);
+  const hist = new Uint32Array(256);
+  const PAPER = 236;
+  for (let i = 0, j = 0; i < sp.length; i += 4, j += 3) {
+    const ill = Math.max(40, bg[i]);
+    const gain = Math.min(1.9, Math.max(0.5, PAPER / ill));
+    const r = sp[i] * gain, g = sp[i + 1] * gain, b = sp[i + 2] * gain;
+    flat[j] = r; flat[j + 1] = g; flat[j + 2] = b;
+    let lum = 0.299 * r + 0.587 * g + 0.114 * b;
+    lum = lum < 0 ? 0 : lum > 255 ? 255 : lum;
+    hist[lum | 0]++;
+  }
+  const total = w * h;
+  const pct = (p) => {
+    let acc = 0, thresh = p * total;
+    for (let v = 0; v < 256; v++) { acc += hist[v]; if (acc >= thresh) return v; }
+    return 255;
+  };
+  // whiteIn just under the paper level (clips paper to white); blackIn at the
+  // darkest few percent (the ink). Guarantee a usable, not-too-narrow window.
+  const whiteIn = Math.max(60, pct(0.80) - 6);
+  let blackIn = pct(0.04);
+  if (whiteIn - blackIn < 30) blackIn = whiteIn - 30;
+  if (blackIn < 0) blackIn = 0;
+  const range = Math.max(12, whiteIn - blackIn);
+  const gamma = 1.3;                                  // >1 deepens the mid marks
+
+  // Pass 2 — levels stretch on luminance, applied as a per-pixel gain so hue is
+  // preserved; paper → white, marks → dark and crisp. A white knee snaps the
+  // top of the range to pure white so paper grain and faint shadows on the page
+  // clean up instead of reading as a gray wash.
   const out = ctx.createImageData(w, h);
   const op = out.data;
-  const target = 242, con = 1.18, mid = 150;
-  for (let i = 0; i < sp.length; i += 4) {
-    const blur = Math.max(8, bg[i]);                 // grayscale → r=g=b=luma
-    let gain = target / blur;
-    gain = Math.min(2.6, Math.max(0.4, gain));
+  for (let i = 0, j = 0; i < sp.length; i += 4, j += 3) {
+    const r = flat[j], g = flat[j + 1], b = flat[j + 2];
+    const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+    const sat = Math.max(r, g, b) - Math.min(r, g, b);
+    let t = (lum - blackIn) / range; t = t < 0 ? 0 : t > 1 ? 1 : t;
+    t = Math.pow(t, gamma);
+    // White knee: snap the top of the range to pure white so paper grain reads
+    // clean. For LOW-saturation (gray) pixels — paper shadows, table — push to
+    // white from much lower down, which clears a gray cast without touching
+    // saturated crayon color or dark ink.
+    if (t > 0.82) t = 1;
+    else if (sat < 26 && t > 0.5) t = t + (1 - t) * Math.min(1, (t - 0.5) / 0.28);
+    const newLum = t * 255;
+    const gain = lum > 1 ? newLum / lum : 0;
     for (let k = 0; k < 3; k++) {
-      let v = sp[i + k] * gain;
-      v = (v - mid) * con + mid;                     // gentle contrast restore
+      const v = flat[j + k] * gain;
       op[i + k] = v < 0 ? 0 : v > 255 ? 255 : v;
     }
     op[i + 3] = 255;
   }
+
+  // Whiten leftover table/floor. We label connected components of strictly-dark
+  // pixels (a strict threshold so paper shadows can't bridge floor into the art)
+  // and clear only those that BOTH touch the frame border AND are large, solid
+  // blobs. The drawing is thin and interior, so even if it runs to an edge its
+  // low fill-ratio keeps it safe.
+  const darkMask = new Uint8Array(w * h);
+  for (let p = 0; p < w * h; p++) {
+    const i = p * 4;
+    if (0.299 * op[i] + 0.587 * op[i + 1] + 0.114 * op[i + 2] < 95) darkMask[p] = 1;
+  }
+  // Close the mask (separable max-dilate) so a speckled/glossy floor merges into
+  // one solid blob the component pass can catch. The thin drawing barely grows.
+  const dr = Math.max(2, Math.round(Math.max(w, h) / 320));
+  const tmpM = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let on = 0; for (let d = -dr; d <= dr; d++) { const xx = x + d; if (xx >= 0 && xx < w && darkMask[y * w + xx]) { on = 1; break; } }
+    tmpM[y * w + x] = on;
+  }
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let on = 0; for (let d = -dr; d <= dr; d++) { const yy = y + d; if (yy >= 0 && yy < h && tmpM[yy * w + x]) { on = 1; break; } }
+    darkMask[y * w + x] = on;
+  }
+  const label = new Uint8Array(w * h);
+  const bigArea = 0.012 * w * h;
+  const q = [];
+  for (let p0 = 0; p0 < w * h; p0++) {
+    if (!darkMask[p0] || label[p0]) continue;
+    q.length = 0; q.push(p0); label[p0] = 1;
+    let touch = false, minx = w, maxx = 0, miny = h, maxy = 0;
+    for (let qh = 0; qh < q.length; qh++) {
+      const p = q[qh], x = p % w, y = (p / w) | 0;
+      if (x === 0 || y === 0 || x === w - 1 || y === h - 1) touch = true;
+      if (x < minx) minx = x; if (x > maxx) maxx = x;
+      if (y < miny) miny = y; if (y > maxy) maxy = y;
+      if (x > 0 && darkMask[p - 1] && !label[p - 1]) { label[p - 1] = 1; q.push(p - 1); }
+      if (x < w - 1 && darkMask[p + 1] && !label[p + 1]) { label[p + 1] = 1; q.push(p + 1); }
+      if (y > 0 && darkMask[p - w] && !label[p - w]) { label[p - w] = 1; q.push(p - w); }
+      if (y < h - 1 && darkMask[p + w] && !label[p + w]) { label[p + w] = 1; q.push(p + w); }
+    }
+    const area = q.length;
+    const fill = area / Math.max(1, (maxx - minx + 1) * (maxy - miny + 1));
+    if (touch && area > bigArea && fill > 0.45) {
+      for (let k = 0; k < q.length; k++) { const i = q[k] * 4; op[i] = op[i + 1] = op[i + 2] = 255; }
+    }
+  }
+
   ctx.putImageData(out, 0, 0);
+  if (bolden) boldenLines(ctx, w, h, Math.max(2, Math.round(Math.max(w, h) / 650)), 0.9);
   return c.toDataURL('image/jpeg', 0.92);
 }
 
@@ -608,7 +781,7 @@ const DECO = {
       <path d="M4 64 l 7 -2 M90 72 l 6 -2"/>
     </g>`,
   miro: `
-    <g stroke="#0E0E0D" stroke-width="0.5" fill="none">
+    <g stroke="#0E0E0D" stroke-width="0.9" fill="none" stroke-linecap="round">
       <path d="M14 18 q 16 14 30 4 q 12 -14 38 -2"/>
       <path d="M8 60 q 24 -10 36 6 q 16 18 42 4"/>
       <path d="M82 22 q -8 24 6 50"/>
@@ -628,8 +801,8 @@ const DECO = {
 function kleeMosaic() {
   let cells = '';
   const n = 11, step = 100 / n;
-  for (let y = 0; y <= n; y++) cells += `<line x1="0" y1="${(y * step).toFixed(2)}" x2="100" y2="${(y * step).toFixed(2)}" stroke="rgba(40,28,16,0.4)" stroke-width="0.4"/>`;
-  for (let x = 0; x <= n; x++) cells += `<line x1="${(x * step).toFixed(2)}" y1="0" x2="${(x * step).toFixed(2)}" y2="100" stroke="rgba(40,28,16,0.4)" stroke-width="0.4"/>`;
+  for (let y = 0; y <= n; y++) cells += `<line x1="0" y1="${(y * step).toFixed(2)}" x2="100" y2="${(y * step).toFixed(2)}" stroke="rgba(30,20,10,0.6)" stroke-width="0.6"/>`;
+  for (let x = 0; x <= n; x++) cells += `<line x1="${(x * step).toFixed(2)}" y1="0" x2="${(x * step).toFixed(2)}" y2="100" stroke="rgba(30,20,10,0.6)" stroke-width="0.6"/>`;
   return cells;
 }
 
@@ -1526,4 +1699,4 @@ function Confirmation({ go, drawing, style, config, brand, aiResults, uploaded }
   );
 }
 
-Object.assign(window, { Header, Landing, Upload, Processing, Results, Detail, Configure, Cart, Checkout, Confirmation, SIZES, FRAMES });
+Object.assign(window, { Header, Landing, Upload, Processing, Results, Detail, Configure, Cart, Checkout, Confirmation, SIZES, FRAMES, normalizeDrawing, removePaperBackground, clientStyleFilter });
