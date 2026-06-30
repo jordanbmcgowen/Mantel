@@ -266,34 +266,38 @@ function loadImageFromSrc(src) {
 const STYLE_PROFILES = {
   pure:     { aiStrength: null, fallbackBg: "#F4F0E8",
               vec: { numberofcolors: 24, colorquantcycles: 4, pathomit: 6,  ltres: 0.4, qtres: 0.4, blurradius: 1, blurdelta: 14 } },
-  // Prompts are deliberately aggressive about MEDIUM and FORM-LANGUAGE, not
-  // just palette. The worker does a structure-preserving edit, so it keeps the
-  // subject roughly centred — but it WILL change material, brushwork, geometry
-  // and abstraction dramatically when told to, which is what makes each style
-  // read as a genuinely different treatment rather than a recolor.
-  warhol:   { aiStrength: 0.45, fallbackBg: "#FFD23F",
-              prompt: "Recreate this picture as an Andy Warhol pop-art silkscreen arranged as a 2x2 grid of four identical panels, each panel a different bold high-contrast color scheme (acid green, hot magenta, electric blue, lemon), flat screenprinted blocks of color with slightly off-register edges.",
+  // Prompts are deliberately aggressive about MEDIUM, FORM-LANGUAGE and the
+  // ARTIST'S OWN BODY OF WORK — not just palette. The worker does a
+  // structure-preserving edit, so it keeps the subject roughly centred, but it
+  // WILL change material, brushwork, texture and abstraction dramatically when
+  // told to. Naming specific masterworks and material qualities (impasto,
+  // torn paper grain, silkscreen, oilstick) is what pushes the output from a
+  // generic recolor to a rich, gallery-quality painting. Strengths are tuned
+  // up so the model genuinely elaborates rather than lightly tinting.
+  warhol:   { aiStrength: 0.62, fallbackBg: "#FFD23F",
+              prompt: "Recreate this picture as an Andy Warhol pop-art silkscreen in the spirit of his Marilyn series, arranged as a 2x2 grid of four identical panels, each panel a boldly different high-contrast color scheme (acid green with pink, hot magenta with orange, electric blue with yellow, black with red), flat screenprinted blocks of saturated color, visible halftone dot texture and slightly off-register edges. Iconic, graphic, vivid.",
               vec: { numberofcolors: 8,  colorquantcycles: 4, pathomit: 12, ltres: 0.8, qtres: 0.8, blurradius: 1, blurdelta: 14 } },
-  basquiat: { aiStrength: 0.55, fallbackBg: "#C8A877",
-              prompt: "Recreate this picture as a Jean-Michel Basquiat neo-expressionist painting on warm kraft paper: raw frenetic oilstick and crayon scrawls, a bright yellow three-point crown, scribbled block-letter words, crossed-out marks, dense scratchy mark-making, bold primary colors, untamed and childlike-on-purpose.",
+  basquiat: { aiStrength: 0.72, fallbackBg: "#C8A877",
+              prompt: "Recreate this picture as a museum-quality Jean-Michel Basquiat neo-expressionist painting on weathered kraft paper: raw frenetic oilstick and wax crayon scrawls, a bright yellow three-point crown, scribbled and crossed-out block-letter words, copyright marks, dense layered scratchy mark-making, drips and smears, bold primary colors over the whole canvas, urgent and untamed.",
               vec: { numberofcolors: 28, colorquantcycles: 3, pathomit: 4,  ltres: 0.5, qtres: 0.5, blurradius: 1, blurdelta: 14 } },
-  hockney:  { aiStrength: 0.55, fallbackBg: "#3CB7B3",
-              prompt: "Recreate this picture as a David Hockney pop artwork: flat planes of sunlit California color, turquoise pool water with wavy white ripple lines, hot pink and lemon yellow, a bleached cyan sky, crisp confident outlines, bright and graphic.",
+  hockney:  { aiStrength: 0.68, fallbackBg: "#3CB7B3",
+              prompt: "Recreate this picture as a luminous David Hockney acrylic painting in his sunlit California style: broad flat planes of bright color, turquoise water with wavy white ripple lines, palm-frond shapes, a bleached cyan sky, hot pink and lemon yellow accents, crisp confident edges, airy and graphic. Rich, vivid, high quality.",
               vec: { numberofcolors: 14, colorquantcycles: 4, pathomit: 10, ltres: 1.0, qtres: 1.0, blurradius: 2, blurdelta: 18 } },
-  picasso:  { aiStrength: 0.6, fallbackBg: "#0F1E3D",
-              prompt: "Recreate this picture as a Picasso Blue Period cubist oil painting: the whole scene fractured into angular faceted planes, rendered entirely in deep melancholic blues, indigo and soft cyan, somber painterly oil brushwork, no other colors.",
+  picasso:  { aiStrength: 0.82, fallbackBg: "#0F1E3D",
+              postTint: { dark: "#070F26", mid: "#2B5590", light: "#CFE0F4" },
+              prompt: "Recreate this picture as a richly textured Picasso cubist oil painting: the whole scene fractured into overlapping angular faceted planes, with visible impasto brushwork, layered translucent glazes, bold black contour lines and dramatic chiaroscuro depth. Somber, atmospheric and museum-quality, every inch of the canvas activated.",
               vec: { numberofcolors: 28, colorquantcycles: 4, pathomit: 6,  ltres: 0.6, qtres: 0.6, blurradius: 2, blurdelta: 18 } },
-  klee:     { aiStrength: 0.7, fallbackBg: "#D8C49A",
-              prompt: "Recreate this picture in the manner of Paul Klee's 'Castle and Sun': dissolve the whole scene into a tessellated mosaic of small soft-edged colored squares and rectangles in warm earthy reds, ochres, teals and greens, gentle pencil borders, the subject barely emerging from the grid of tiles.",
+  klee:     { aiStrength: 0.82, fallbackBg: "#D8C49A",
+              prompt: "Recreate this picture in the manner of Paul Klee's 'Castle and Sun': dissolve the whole scene into a rich tessellated mosaic of small soft-edged colored squares and rectangles in warm reds, ochres, teals, golds and greens, each tile a slightly different hand-mixed watercolor wash with visible pigment grain, gentle pencil borders, the subject gently emerging from the field of tiles. Layered, luminous, painterly.",
               vec: { numberofcolors: 32, colorquantcycles: 4, pathomit: 6,  ltres: 0.5, qtres: 0.5, blurradius: 2, blurdelta: 18 } },
-  matisse:  { aiStrength: 0.7, fallbackBg: "#F1ECE2",
-              prompt: "Recreate this picture as a Henri Matisse paper cut-out collage: simplified into a few bold flat organic shapes torn from solid colored paper — vermillion, cobalt blue, kelly green and gold — no outlines, no shading, no detail, just clean confident cut shapes floating on a warm ground.",
+  matisse:  { aiStrength: 0.78, fallbackBg: "#F1ECE2",
+              prompt: "Recreate this picture as a vibrant Henri Matisse paper cut-out collage in the spirit of 'Jazz' and 'The Snail': bold overlapping organic shapes torn from richly colored paper — vermillion, cobalt, kelly green, gold and magenta — with a few scattered leaf and star cut-out accents giving the composition rhythm, visible torn deckled paper edges and paper grain, no outlines. Joyful, dynamic, gallery-quality.",
               vec: { numberofcolors: 10, colorquantcycles: 4, pathomit: 14, ltres: 1.2, qtres: 1.2, blurradius: 3, blurdelta: 20 } },
-  miro:     { aiStrength: 0.85, fallbackBg: "#F0E6CE",
-              prompt: "Reinvent this picture freely as a Joan Miro surrealist painting: loose playful biomorphic blobs and amoeba shapes, thin curved black connecting lines, scattered black dots, stars and a crescent moon, bold primary red blue yellow accents on a soft warm cream ground. Abstract and dreamlike — do not copy the original layout, just keep its spirit.",
+  miro:     { aiStrength: 0.9, fallbackBg: "#F0E6CE",
+              prompt: "Reinvent this picture freely as a Joan Miro surrealist painting in the spirit of 'The Tilled Field' and his Constellations: loose playful biomorphic blobs and amoeba shapes, thin sweeping black calligraphic lines, scattered black dots, stars and a crescent moon, bold primary red blue and yellow accents on a soft warm cream ground with subtle painterly washes. Abstract, lyrical and dreamlike — do not copy the original layout, keep only its spirit.",
               vec: { numberofcolors: 10, colorquantcycles: 4, pathomit: 12, ltres: 1.0, qtres: 1.0, blurradius: 2, blurdelta: 18 } },
-  mondrian: { aiStrength: 0.85, fallbackBg: "#F4F0E8",
-              prompt: "Reinvent this picture as a Piet Mondrian De Stijl composition: an asymmetric grid of bold rectangles in primary red, yellow and blue plus white, separated by thick black ruled lines. Geometric, flat and abstract — keep only a faint echo of the original arrangement.",
+  mondrian: { aiStrength: 0.88, fallbackBg: "#F4F0E8",
+              prompt: "Reinvent this picture as a Piet Mondrian De Stijl composition in the spirit of 'Composition with Red, Blue and Yellow': an asymmetric grid of bold rectangles in pure primary red, yellow and blue plus crisp white, separated by thick confident black ruled lines, with the subtle canvas texture of an oil painting. Geometric, balanced, flat and abstract — keep only a faint echo of the original arrangement.",
               vec: { numberofcolors: 5,  colorquantcycles: 3, pathomit: 20, ltres: 2.0, qtres: 2.0, blurradius: 4, blurdelta: 24 } },
   // Rothko is rendered client-side as a true abstract color field — the
   // edit model refuses to dissolve the subject (it just blurs it), so we
@@ -392,6 +396,53 @@ async function removePaperBackground(dataURL) {
   }
   ctx.putImageData(imageData, 0, 0);
   return canvas.toDataURL('image/png');
+}
+
+// Flatten the lighting of a phone photo before anything else touches it.
+// A drawing shot on a table almost always has a soft shadow gradient or warm
+// cast across the page; the AI reads that gradient as real color/tone and bakes
+// it into the painting. We estimate the paper illumination with a heavy blur,
+// then divide it back out (per-pixel gain toward a white target). Broad shadows
+// and color casts disappear, the paper goes clean white, and the crayon colors
+// stay saturated — so the model interprets the marks, not the lighting.
+async function normalizeDrawing(dataURL, { maxDim = 1280 } = {}) {
+  const img = await loadImageFromSrc(dataURL);
+  const w0 = img.naturalWidth || maxDim, h0 = img.naturalHeight || maxDim;
+  const scale = Math.min(1, maxDim / Math.max(w0, h0));
+  const w = Math.max(1, Math.round(w0 * scale)), h = Math.max(1, Math.round(h0 * scale));
+
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(img, 0, 0, w, h);
+  const src = ctx.getImageData(0, 0, w, h);
+  const sp = src.data;
+
+  // Illumination estimate: a strongly blurred grayscale copy. The blur radius
+  // is large relative to the image so it captures the lighting gradient, not
+  // the drawing's own edges.
+  const bgc = document.createElement('canvas'); bgc.width = w; bgc.height = h;
+  const bctx = bgc.getContext('2d');
+  bctx.filter = `grayscale(1) blur(${Math.max(2, Math.round(Math.max(w, h) / 7))}px)`;
+  bctx.drawImage(c, 0, 0);
+  bctx.filter = 'none';
+  const bg = bctx.getImageData(0, 0, w, h).data;
+
+  const out = ctx.createImageData(w, h);
+  const op = out.data;
+  const target = 242, con = 1.18, mid = 150;
+  for (let i = 0; i < sp.length; i += 4) {
+    const blur = Math.max(8, bg[i]);                 // grayscale → r=g=b=luma
+    let gain = target / blur;
+    gain = Math.min(2.6, Math.max(0.4, gain));
+    for (let k = 0; k < 3; k++) {
+      let v = sp[i + k] * gain;
+      v = (v - mid) * con + mid;                     // gentle contrast restore
+      op[i + k] = v < 0 ? 0 : v > 255 ? 255 : v;
+    }
+    op[i + 3] = 255;
+  }
+  ctx.putImageData(out, 0, 0);
+  return c.toDataURL('image/jpeg', 0.92);
 }
 
 // ─── Client-side style fallback ──────────────────────────────────────────────
@@ -689,6 +740,19 @@ async function clientStyleFilter(cleanedDataURL, styleId, { maxDim = 1024 } = {}
   return c.toDataURL('image/jpeg', 0.9);
 }
 
+// Recolor a raster through a dark→light duotone ramp. Used to force a style's
+// signature key (Picasso's single blue) onto a rich AI render without
+// flattening it — the faceting and brushwork survive as tonal variation.
+async function tintRaster(dataURL, dark, light, mid) {
+  const img = await loadImageFromSrc(dataURL);
+  const w = img.naturalWidth || 1024, h = img.naturalHeight || 1024;
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(img, 0, 0, w, h);
+  duotone(ctx, w, h, dark, light, mid);
+  return c.toDataURL('image/jpeg', 0.92);
+}
+
 // Final assets for a given style. We return two representations:
 //   preview  — a small downscaled raster (~640px). Cheap to decode, ideal for
 //              the ten-up gallery and the order-flow thumbnails. This is what
@@ -708,7 +772,12 @@ async function postProcess(originalDataURL, aiBase64, styleId, cleanedDataURL) {
       return { preview, full };
     }
     if (!aiBase64) return null;
-    const aiDataURL = 'data:image/png;base64,' + aiBase64;
+    let aiDataURL = 'data:image/png;base64,' + aiBase64;
+    if (profile.postTint) {
+      try {
+        aiDataURL = await tintRaster(aiDataURL, profile.postTint.dark, profile.postTint.light, profile.postTint.mid);
+      } catch (e) { console.warn('postTint failed for', styleId, e.message); }
+    }
     const full = await vectorizeRaster(aiDataURL, profile.vec);
     const preview = await makePreview(aiDataURL, { preserveAlpha: false });
     return { preview, full };
@@ -822,28 +891,38 @@ function Processing({ go, drawing, uploaded, setAiResults }) {
         return;
       }
 
-      // Read file once — keep both the raw base64 (for the API) and the full
-      // data URL (for client-side compositing after each API response).
+      // Read the file once into a data URL.
       setStage('Reading your drawing…');
-      const { image_b64, originalDataURL } = await new Promise((resolve) => {
+      const originalDataURL = await new Promise((resolve) => {
         const reader = new FileReader();
-        reader.onload = () => {
-          const dataURL = reader.result;
-          resolve({ image_b64: dataURL.split(',')[1], originalDataURL: dataURL });
-        };
+        reader.onload = () => resolve(reader.result);
         reader.readAsDataURL(uploaded.file);
       });
       if (cancelled) return;
+
+      // Flatten the lighting first: knock out the table shadow / warm cast so
+      // the model paints from the marks, not the photograph. Everything
+      // downstream — the AI input, the paper knockout, the fallbacks — works
+      // from this clean, evenly-lit version.
+      setStage('Evening out the lighting…');
+      let normalizedDataURL = originalDataURL;
+      try {
+        normalizedDataURL = await normalizeDrawing(originalDataURL);
+      } catch (e) {
+        console.warn('Normalization failed, using original:', e.message);
+      }
+      if (cancelled) return;
+      const aiImageB64 = (normalizedDataURL.split(',')[1]) || '';
 
       // Lift the drawing off the paper once. This powers the "pure" style and
       // is the source for every in-browser style fallback, so do it up front.
       setStage('Lifting it off the paper…');
       let cleanedDataURL;
       try {
-        cleanedDataURL = await removePaperBackground(originalDataURL);
+        cleanedDataURL = await removePaperBackground(normalizedDataURL);
       } catch (e) {
-        console.warn('Paper removal failed, using original:', e.message);
-        cleanedDataURL = originalDataURL;
+        console.warn('Paper removal failed, using normalized:', e.message);
+        cleanedDataURL = normalizedDataURL;
       }
       if (cancelled) return;
 
@@ -860,7 +939,7 @@ function Processing({ go, drawing, uploaded, setAiResults }) {
       };
 
       // "pure" is client-side (paper knockout + vectorize) — start it now.
-      const purePromise = postProcess(originalDataURL, null, 'pure', cleanedDataURL)
+      const purePromise = postProcess(normalizedDataURL, null, 'pure', cleanedDataURL)
         .then(a => bump('pure', a))
         .catch(e => { console.warn('pure failed:', e.message); bump('pure', null); });
 
@@ -874,7 +953,7 @@ function Processing({ go, drawing, uploaded, setAiResults }) {
           const i = next++;
           if (i >= queue.length) return;
           const id = queue[i];
-          const asset = await renderStyle(image_b64, originalDataURL, cleanedDataURL, id, isCancelled);
+          const asset = await renderStyle(aiImageB64, normalizedDataURL, cleanedDataURL, id, isCancelled);
           bump(id, asset);
         }
       }
