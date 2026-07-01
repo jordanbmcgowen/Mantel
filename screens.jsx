@@ -79,7 +79,7 @@ function Landing({ go, brand }) {
       <section className="section frame">
         <div className="section-head">
           <h2>How it<br/>works.</h2>
-          <p className="lede">Four steps. The whole thing takes a minute or two. The result hangs on your wall for decades.</p>
+          <p className="lede">Four steps. The whole thing takes seconds. The result hangs on your wall for decades.</p>
         </div>
         <div className="steps">
           <div className="step">
@@ -191,7 +191,7 @@ function Upload({ go, setDrawing, setUploaded, uploaded }) {
               </div>
               <h3>Drop a photo here</h3>
               <p>or click to choose a file — JPG, PNG, HEIC up to 25MB</p>
-              <div className="fileinfo">TEN STYLES · READY IN A MINUTE OR TWO</div>
+              <div className="fileinfo">TEN STYLES · READY IN SECONDS</div>
             </div>
           </div>
         </div>
@@ -616,6 +616,130 @@ async function normalizeDrawing(dataURL, { maxDim = 1400, bolden = true } = {}) 
   ctx.putImageData(out, 0, 0);
   if (bolden) boldenLines(ctx, w, h, Math.max(2, Math.round(Math.max(w, h) / 650)), 0.9);
   return c.toDataURL('image/jpeg', 0.92);
+}
+
+// Grow a binary mask by `r` px (separable max / dilation).
+function dilateBinary(m, w, h, r) {
+  if (r < 1) return;
+  const t = new Uint8Array(m.length);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let on = 0; for (let d = -r; d <= r; d++) { const xx = x + d; if (xx >= 0 && xx < w && m[y * w + xx]) { on = 1; break; } }
+    t[y * w + x] = on;
+  }
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    let on = 0; for (let d = -r; d <= r; d++) { const yy = y + d; if (yy >= 0 && yy < h && t[yy * w + x]) { on = 1; break; } }
+    m[y * w + x] = on;
+  }
+}
+
+// Trace the drawing into ONE clean, bold, smooth vector line layer that every
+// design shares — this is what holds the original structure intact and gives a
+// crisp modern outline instead of a thin, pixelated trace. We threshold the ink,
+// thicken it to a confident weight, drop stray specks, then vectorize with heavy
+// smoothing so ImageTracer emits rounded bezier strokes. Returns a two-tone SVG
+// string (black shapes on transparent) that callers recolor per style.
+async function outlineVector(normalizedDataURL, { maxDim = 1200, weight = 1 } = {}) {
+  if (typeof ImageTracer === 'undefined') return null;
+  const img = await loadImageFromSrc(normalizedDataURL);
+  const iw = img.naturalWidth || maxDim, ih = img.naturalHeight || maxDim;
+  const s = Math.min(1, maxDim / Math.max(iw, ih));
+  const w = Math.max(1, Math.round(iw * s)), h = Math.max(1, Math.round(ih * s));
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const cx = cv.getContext('2d'); cx.drawImage(img, 0, 0, w, h);
+  const id = cx.getImageData(0, 0, w, h); const p = id.data;
+
+  const ink = new Uint8Array(w * h);
+  for (let qi = 0, i = 0; qi < w * h; qi++, i += 4) {
+    if (0.299 * p[i] + 0.587 * p[i + 1] + 0.114 * p[i + 2] < 150) ink[qi] = 1;
+  }
+  // Thicken to a bold, even weight scaled to the image.
+  dilateBinary(ink, w, h, Math.max(2, Math.round(Math.max(w, h) / 300 * weight)));
+
+  // Clean the mask: drop tiny specks (dust) and drop solid dark blobs that
+  // touch the frame border (leftover table/floor) — the drawing is a thin line
+  // (low fill ratio), so it survives even where it runs to an edge.
+  const minArea = 0.0012 * w * h, bigArea = 0.007 * w * h;
+  const seen = new Uint8Array(w * h), stack = [];
+  for (let p0 = 0; p0 < w * h; p0++) {
+    if (!ink[p0] || seen[p0]) continue;
+    stack.length = 0; stack.push(p0); seen[p0] = 1; const comp = [p0];
+    let touch = false, minx = w, maxx = 0, miny = h, maxy = 0;
+    for (let qh = 0; qh < stack.length; qh++) {
+      const pp = stack[qh], x = pp % w, y = (pp / w) | 0;
+      if (x === 0 || y === 0 || x === w - 1 || y === h - 1) touch = true;
+      if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y;
+      if (x > 0 && ink[pp - 1] && !seen[pp - 1]) { seen[pp - 1] = 1; stack.push(pp - 1); comp.push(pp - 1); }
+      if (x < w - 1 && ink[pp + 1] && !seen[pp + 1]) { seen[pp + 1] = 1; stack.push(pp + 1); comp.push(pp + 1); }
+      if (y > 0 && ink[pp - w] && !seen[pp - w]) { seen[pp - w] = 1; stack.push(pp - w); comp.push(pp - w); }
+      if (y < h - 1 && ink[pp + w] && !seen[pp + w]) { seen[pp + w] = 1; stack.push(pp + w); comp.push(pp + w); }
+    }
+    const fill = comp.length / Math.max(1, (maxx - minx + 1) * (maxy - miny + 1));
+    if (comp.length < minArea || (touch && comp.length > bigArea && fill > 0.34)) {
+      for (const pp of comp) ink[pp] = 0;
+    }
+  }
+
+  for (let qi = 0, i = 0; qi < w * h; qi++, i += 4) {
+    const v = ink[qi] ? 0 : 255; p[i] = p[i + 1] = p[i + 2] = v; p[i + 3] = 255;
+  }
+  cx.putImageData(id, 0, 0);
+
+  const svg = await new Promise((res) => ImageTracer.imageToSVG(
+    cv.toDataURL('image/png'), res,
+    { pal: [{ r: 255, g: 255, b: 255, a: 255 }, { r: 0, g: 0, b: 0, a: 255 }],
+      pathomit: 4, ltres: 2, qtres: 2, blurradius: 0, roundcoords: 1, linefilter: false }
+  ));
+  // Keep only the dark shapes; make the paper (and any light fill) transparent,
+  // and normalize the ink fill so callers can recolor it. Strokes are dropped so
+  // the near-white outline strokes ImageTracer adds don't ghost over the design.
+  return svg
+    .replace(/stroke="[^"]*"/g, 'stroke="none"')
+    .replace(/fill="rgb\((\d+),(\d+),(\d+)\)"/g,
+      (m, r, g, b) => (+r + +g + +b > 150) ? 'fill="none"' : 'fill="rgb(0,0,0)"');
+}
+
+// Composite the shared outline over a style's color layer. `bgDataURL` is the
+// styled raster; the outline is recolored to `color` and drawn on top, giving
+// every design the same crisp structural line.
+async function composeOutline(bgDataURL, outlineSVG, { color = '#161616', maxDim = 1024, tiles = 1 } = {}) {
+  if (!outlineSVG) return bgDataURL;
+  const bg = await loadImageFromSrc(bgDataURL);
+  const iw = bg.naturalWidth || maxDim, ih = bg.naturalHeight || maxDim;
+  const s = Math.min(1, maxDim / Math.max(iw, ih));
+  const w = Math.max(1, Math.round(iw * s)), h = Math.max(1, Math.round(ih * s));
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const cx = cv.getContext('2d');
+  cx.drawImage(bg, 0, 0, w, h);
+  const tinted = outlineSVG.replace(/fill="rgb\(0,0,0\)"/g, `fill="${color}"`);
+  const line = await loadImageFromSrc('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(tinted));
+  if (tiles === 4) {                                  // Warhol — one outline per quad cell
+    const cw = w / 2, ch = h / 2;
+    for (let i = 0; i < 4; i++) cx.drawImage(line, (i % 2) * cw, (i < 2 ? 0 : 1) * ch, cw, ch);
+  } else {
+    cx.drawImage(line, 0, 0, w, h);
+  }
+  return cv.toDataURL('image/jpeg', 0.92);
+}
+
+// The shared outline reads dark on most treatments, but needs to go light on the
+// deep-toned grounds (Picasso blue, Rothko field) to stay crisp.
+const LIGHT_OUTLINE = new Set(['rothko']);
+function outlineColorFor(id) { return LIGHT_OUTLINE.has(id) ? '#EFE8D8' : '#141414'; }
+
+// Build one finished design: the style's color/texture treatment with the shared
+// clean outline composited on top so the structure is identical everywhere.
+async function renderDesign(styleId, cleanedDataURL, outlineSVG) {
+  let bg;
+  try {
+    bg = await clientStyleFilter(cleanedDataURL, styleId);
+  } catch (e) {
+    console.warn('treatment failed for', styleId, e.message);
+    bg = cleanedDataURL;
+  }
+  const opts = { color: outlineColorFor(styleId), tiles: styleId === 'warhol' ? 4 : 1 };
+  const preview = await composeOutline(bg, outlineSVG, { ...opts, maxDim: 900 });
+  const full = await composeOutline(bg, outlineSVG, { ...opts, maxDim: 1400 });
+  return { preview, full };
 }
 
 // ─── Client-side style fallback ──────────────────────────────────────────────
@@ -1073,11 +1197,10 @@ function Processing({ go, drawing, uploaded, setAiResults }) {
       });
       if (cancelled) return;
 
-      // Flatten the lighting first: knock out the table shadow / warm cast so
-      // the model paints from the marks, not the photograph. Everything
-      // downstream — the AI input, the paper knockout, the fallbacks — works
-      // from this clean, evenly-lit version.
-      setStage('Evening out the lighting…');
+      // Flatten the lighting and rescue the linework: knock out the table
+      // shadow / warm cast and drive the marks dark and bold. Everything
+      // downstream works from this clean, evenly-lit version.
+      setStage('Cleaning up your drawing…');
       let normalizedDataURL = originalDataURL;
       try {
         normalizedDataURL = await normalizeDrawing(originalDataURL);
@@ -1085,11 +1208,21 @@ function Processing({ go, drawing, uploaded, setAiResults }) {
         console.warn('Normalization failed, using original:', e.message);
       }
       if (cancelled) return;
-      const aiImageB64 = (normalizedDataURL.split(',')[1]) || '';
 
-      // Lift the drawing off the paper once. This powers the "pure" style and
-      // is the source for every in-browser style fallback, so do it up front.
-      setStage('Lifting it off the paper…');
+      // Trace the drawing into ONE clean, bold vector outline. This is the
+      // structural anchor laid over every design, so the original holds intact
+      // and the lines stay crisp and consistent across all ten.
+      setStage('Tracing a clean outline…');
+      let outlineSVG = null;
+      try {
+        outlineSVG = await outlineVector(normalizedDataURL);
+      } catch (e) {
+        console.warn('Outline trace failed:', e.message);
+      }
+      if (cancelled) return;
+
+      // Lift the drawing off the paper — the source for each style's colour and
+      // texture treatment that sits behind the outline.
       let cleanedDataURL;
       try {
         cleanedDataURL = await removePaperBackground(normalizedDataURL);
@@ -1099,39 +1232,24 @@ function Processing({ go, drawing, uploaded, setAiResults }) {
       }
       if (cancelled) return;
 
+      // Every design = a per-style colour/texture treatment with the shared
+      // clean outline composited on top. All client-rendered, so it's fast,
+      // reliable, and the structure is identical everywhere.
       const results = {};
       let done = 0;
       const total = STYLE_IDS.length;
-      const bump = (id, asset) => {
-        if (asset) results[id] = asset;
+      await Promise.all(STYLE_IDS.map(async (id) => {
+        try {
+          results[id] = await renderDesign(id, cleanedDataURL, outlineSVG);
+        } catch (e) {
+          console.warn('Design failed for', id, e.message);
+        }
         done += 1;
         if (!cancelled) {
           setProgress(Math.round(done / total * 100));
-          setStage(`Reimagining your drawing… ${done} of ${total}`);
+          setStage(`Rendering your pieces… ${done} of ${total}`);
         }
-      };
-
-      // "pure" is client-side (paper knockout + vectorize) — start it now.
-      const purePromise = postProcess(normalizedDataURL, null, 'pure', cleanedDataURL)
-        .then(a => bump('pure', a))
-        .catch(e => { console.warn('pure failed:', e.message); bump('pure', null); });
-
-      // The nine interpreted styles run through a small concurrency pool so we
-      // don't fire all nine at the worker at once, but also don't crawl through
-      // them one at a time.
-      const queue = STYLE_IDS.filter(id => id !== 'pure');
-      let next = 0;
-      async function worker() {
-        while (!cancelled) {
-          const i = next++;
-          if (i >= queue.length) return;
-          const id = queue[i];
-          const asset = await renderStyle(aiImageB64, normalizedDataURL, cleanedDataURL, id, isCancelled);
-          bump(id, asset);
-        }
-      }
-      const pool = Array.from({ length: Math.min(AI_CONCURRENCY, queue.length) }, worker);
-      await Promise.all([purePromise, ...pool]);
+      }));
 
       if (!cancelled) {
         setAiResults(results);
@@ -1699,4 +1817,4 @@ function Confirmation({ go, drawing, style, config, brand, aiResults, uploaded }
   );
 }
 
-Object.assign(window, { Header, Landing, Upload, Processing, Results, Detail, Configure, Cart, Checkout, Confirmation, SIZES, FRAMES, normalizeDrawing, removePaperBackground, clientStyleFilter });
+Object.assign(window, { Header, Landing, Upload, Processing, Results, Detail, Configure, Cart, Checkout, Confirmation, SIZES, FRAMES, normalizeDrawing, removePaperBackground, clientStyleFilter, outlineVector, composeOutline });
