@@ -60,8 +60,6 @@ function App() {
           drawing={drawing}
           uploaded={uploaded}
           setStyle={setStyle}
-          galleryLayout={t.gallery}
-          setGalleryLayout={(v) => setTweak("gallery", v)}
           brand={t.brand}
           aiResults={aiResults}
         />
@@ -126,18 +124,6 @@ function App() {
             { label: "Airy",    value: "airy"    },
           ]}
           onChange={(v) => setTweak("density", v)}
-        />
-
-        <TweakSection label="Results gallery"/>
-        <TweakRadio
-          label="Layout"
-          value={t.gallery}
-          options={[
-            { label: "Grid",     value: "grid"     },
-            { label: "Masonry",  value: "masonry"  },
-            { label: "Carousel", value: "carousel" },
-          ]}
-          onChange={(v) => setTweak("gallery", v)}
         />
 
         <TweakSection label="Configure preview"/>

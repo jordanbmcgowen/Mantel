@@ -1282,7 +1282,7 @@ function Processing({ go, drawing, uploaded, setAiResults }) {
 }
 
 // ─── Results ────────────────────────────────────────────────────────────────
-function Results({ go, drawing, uploaded, setStyle, galleryLayout, setGalleryLayout, brand, aiResults }) {
+function Results({ go, drawing, uploaded, setStyle, brand, aiResults }) {
   const D = DRAWINGS[drawing]?.component;
   return (
     <section className="results frame">
@@ -1301,24 +1301,16 @@ function Results({ go, drawing, uploaded, setStyle, galleryLayout, setGalleryLay
               {uploaded ? "Your upload" : `${DRAWINGS[drawing]?.label} — ${DRAWINGS[drawing]?.artist}`}
             </div>
           </div>
-          <div className="layout-switch">
-            {["grid","masonry","carousel"].map(l => (
-              <button key={l}
-                className={galleryLayout === l ? "is-active" : ""}
-                onClick={() => setGalleryLayout(l)}>{l}</button>
-            ))}
-          </div>
         </div>
       </div>
 
-      <div className={`gallery-${galleryLayout}`}>
+      <div className="gallery-grid">
         {STYLES.map((s, i) => {
-          const ratio = galleryLayout === "masonry" ? [1, 1.2, 0.9, 1.1, 0.85, 1.05, 1.15, 0.95, 1, 0.9][i] : 1;
           const aiAsset = uploaded && aiResults && aiResults[s.id];
           const previewSrc = aiAsset?.preview || aiAsset?.full || (uploaded && uploaded.url);
           return (
             <div key={s.id} className={`tile ${s.id === "pure" ? "is-pure" : ""}`} onClick={() => { setStyle(s.id); go("detail"); }}>
-              <div className="tile-art" style={{aspectRatio: ratio}}>
+              <div className="tile-art" style={{aspectRatio: 1}}>
                 {previewSrc
                   ? <img src={previewSrc} alt={s.name} loading="lazy" decoding="async" style={{width:"100%", height:"100%", objectFit:"cover"}}/>
                   : <StyleLens style={s.id} drawing={drawing}/>
