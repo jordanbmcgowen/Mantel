@@ -17,9 +17,9 @@ const STYLES = [
   { id: "mondrian", name: "Composition",   artist: "Piet Mondrian",         label: "DE STIJL",
     blurb: "Reduced to its primary forces — red, blue, yellow, ruled in heavy black, suspended on white. De Stijl applied to your kid like a Mondrian retrospective.",
     pull:  "Red, yellow, blue, and nothing else." },
-  { id: "rothko",   name: "Color Field",   artist: "Mark Rothko",           label: "COLOR FIELD",
-    blurb: "Two enormous, humming bands of color — the kind of painting Rothko made for the Houston chapel. The drawing dissolves into atmosphere.",
-    pull:  "Two colors, breathing." },
+  { id: "haring",   name: "Pop Figures",   artist: "Keith Haring",          label: "POP GRAPHIC",
+    blurb: "Bold black outlines, radiating energy lines, and flat electric color — the subway-drawing language Haring used to make pure joy legible from across a room.",
+    pull:  "Lines that vibrate with life." },
   { id: "hockney",  name: "Pool",          artist: "David Hockney",         label: "POP CALIFORNIA",
     blurb: "Sunlit, flat, and pop — pool ripples in chlorine turquoise, a hot pink that only exists in Los Angeles, a sky bleached to the edge of cyan.",
     pull:  "A bigger splash." },
@@ -95,6 +95,17 @@ const PALETTES = {
     garden: { flower1:"#C72A1C", flower2:"#F4C40D", flower3:"#1B4FBF",
               center:"#F4C40D", stem:"#1E5630", leaf:"#2E7A3F", pot:"#C72A1C",
               butterfly:"#1B4FBF", ground:"#F4C40D", heart:"#C72A1C" }
+  },
+
+  haring: {
+    house:  { sun:"#F5C518", grass:"#12A150", tree:"#0E7A3C", trunk:"#111111",
+              house:"#E6352B", roof:"#111111", door:"#111111", win:"#1B6FD6",
+              person1:"#1B6FD6", person2:"#E6352B", cloud:"#FFFFFF", heart:"#E6352B" },
+    dino:   { sun:"#F5C518", dino:"#12A150", belly:"#8FD06A", spikes:"#0E7A3C",
+              eye:"#FFFFFF", pupil:"#111111", plant:"#0E7A3C", ground:"#E6352B", smile:"#E6352B" },
+    garden: { flower1:"#E6352B", flower2:"#1B6FD6", flower3:"#12A150",
+              center:"#F5C518", stem:"#12A150", leaf:"#0E7A3C", pot:"#E6352B",
+              butterfly:"#1B6FD6", ground:"#12A150", heart:"#E6352B" }
   },
 };
 
@@ -244,32 +255,30 @@ function StyleMondrian({ drawing }) {
   );
 }
 
-// ─── Rothko — Color Field ──────────────────────────────────────────────────
-function StyleRothko({ drawing }) {
-  // pick band colors that loosely correspond to the source drawing
-  const palette = {
-    house:  ["#F47A4A","#DC4222","#B82612","#2A0604","#1A0202"],
-    dino:   ["#E8D8A0","#C4A658","#7C5E2A","#3A2A12","#1F1408"],
-    garden: ["#F4C8A8","#E08266","#A8424A","#3A0E1A","#1A0408"],
-  }[drawing] || ["#F47A4A","#DC4222","#B82612","#2A0604","#1A0202"];
-
+// ─── Haring — Pop Figures ──────────────────────────────────────────────────
+function StyleHaring({ drawing }) {
+  const D = getDrawingComponent(drawing);
+  // Haring's signature radiating "vibration" ticks, scattered around the edges
+  // so they frame the figure without crowding it.
+  const marks = [[16,22],[84,20],[22,82],[80,84],[50,10],[10,52],[90,56],[38,90]];
   return (
-    <div className="lens lens-rothko">
-      {/* outer brushed border — Rothko canvases breathe at the edges */}
-      <div className="rothko-canvas" style={{background: palette[4]}}>
-        <div className="rothko-band rothko-top"
-             style={{background: `linear-gradient(180deg, ${palette[0]} 0%, ${palette[1]} 50%, ${palette[2]} 100%)`}}/>
-        <div className="rothko-band rothko-bot"
-             style={{background: `linear-gradient(180deg, ${palette[2]} 0%, ${palette[3]} 60%, ${palette[4]} 100%)`}}/>
-        {/* canvas weave texture overlay */}
-        <svg className="lens-deco" viewBox="0 0 100 100" preserveAspectRatio="none"
-             style={{mixBlendMode: "multiply", opacity: 0.65}}>
-          <rect width="100" height="100" fill="url(#mt-canvas)"/>
-        </svg>
-        {/* burnt edges */}
-        <div className="rothko-burn"/>
+    <div className="lens" style={{background: "#F5C518", position: "relative", overflow: "hidden"}}>
+      <svg className="lens-deco" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <g stroke="#141414" strokeWidth="1.1" strokeLinecap="round" fill="none">
+          {marks.map(([x, y], i) => (
+            <g key={i} transform={`translate(${x} ${y})`}>
+              <line x1="0" y1="-4" x2="0" y2="-8.5"/>
+              <line x1="3.6" y1="-2.6" x2="6.6" y2="-5.6"/>
+              <line x1="-3.6" y1="-2.6" x2="-6.6" y2="-5.6"/>
+            </g>
+          ))}
+        </g>
+      </svg>
+      <div style={{position: "absolute", inset: "7%"}}>
+        <D palette={paletteOver(drawing, PALETTES.haring[drawing])} line="#111" lineW={6} flat
+           style={{width: "100%", height: "100%"}}/>
       </div>
-      <div className="lens-signature rothko-sig">MR</div>
+      <div className="lens-signature">K. Haring</div>
     </div>
   );
 }
@@ -561,7 +570,7 @@ function StyleLens({ style, drawing }) {
     case "matisse":  return <StyleMatisse  drawing={drawing}/>;
     case "picasso":  return <StylePicasso  drawing={drawing}/>;
     case "mondrian": return <StyleMondrian drawing={drawing}/>;
-    case "rothko":   return <StyleRothko   drawing={drawing}/>;
+    case "haring":   return <StyleHaring   drawing={drawing}/>;
     case "hockney":  return <StyleHockney  drawing={drawing}/>;
     case "basquiat": return <StyleBasquiat drawing={drawing}/>;
     case "miro":     return <StyleMiro     drawing={drawing}/>;

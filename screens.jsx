@@ -37,7 +37,7 @@ function Landing({ go, brand }) {
               Your kid's <em>masterpiece</em>,<br />reimagined by the masters.
             </h1>
             <p className="hero-body">
-              Upload a drawing. {brand} will lift it cleanly off the page and reinterpret it in ten styles — from a pure vectorized original to cuts by Matisse, fields by Rothko, and a quad in the manner of Warhol. Pick a favorite. We print it large, frame it well, and ship.
+              Upload a drawing. {brand} will lift it cleanly off the page and reinterpret it in ten styles — from a pure vectorized original to cuts by Matisse, pop figures by Haring, and a quad in the manner of Warhol. Pick a favorite. We print it large, frame it well, and ship.
             </p>
             <div className="hero-actions">
               <button className="btn" onClick={() => go("upload")}>
@@ -64,7 +64,7 @@ function Landing({ go, brand }) {
               <span>Matisse</span><span className="dot"></span>
               <span>Picasso</span><span className="dot"></span>
               <span>Mondrian</span><span className="dot"></span>
-              <span>Rothko</span><span className="dot"></span>
+              <span>Haring</span><span className="dot"></span>
               <span>Hockney</span><span className="dot"></span>
               <span>Basquiat</span><span className="dot"></span>
               <span>Miró</span><span className="dot"></span>
@@ -299,11 +299,11 @@ const STYLE_PROFILES = {
   mondrian: { aiStrength: 0.88, fallbackBg: "#F4F0E8",
               prompt: "Reinvent this picture as a Piet Mondrian De Stijl composition in the spirit of 'Composition with Red, Blue and Yellow': an asymmetric grid of bold rectangles in pure primary red, yellow and blue plus crisp white, separated by thick confident black ruled lines, with the subtle canvas texture of an oil painting. Geometric, balanced, flat and abstract — keep only a faint echo of the original arrangement.",
               vec: { numberofcolors: 5,  colorquantcycles: 3, pathomit: 20, ltres: 2.0, qtres: 2.0, blurradius: 4, blurdelta: 24 } },
-  // Rothko is rendered client-side as a true abstract color field — the
-  // edit model refuses to dissolve the subject (it just blurs it), so we
-  // synthesize the bands ourselves. No prompt / AI call. See renderStyle.
-  rothko:   { aiStrength: null, fallbackBg: "#2A0604", clientOnly: true,
-              vec: { numberofcolors: 48, colorquantcycles: 5, pathomit: 2,  ltres: 0.5, qtres: 0.5, blurradius: 5, blurdelta: 24 } },
+  // Keith Haring — bold flat electric color with radiating energy lines; a
+  // natural partner for the shared bold outline.
+  haring:   { aiStrength: 0.6, fallbackBg: "#F5C518",
+              prompt: "Recreate this picture as a Keith Haring pop graphic: bold thick black outlines, filled with flat electric color (red, blue, green, yellow), surrounded by short radiating black energy lines, on a single vivid flat background. Graphic, joyful, high-contrast.",
+              vec: { numberofcolors: 6, colorquantcycles: 3, pathomit: 12, ltres: 1.0, qtres: 1.0, blurradius: 1, blurdelta: 18 } },
 };
 
 // Vectorize a raster (data URL) into a print-scalable SVG data URL.
@@ -722,8 +722,8 @@ async function composeOutline(bgDataURL, outlineSVG, { color = '#161616', maxDim
 }
 
 // The shared outline reads dark on most treatments, but needs to go light on the
-// deep-toned grounds (Picasso blue, Rothko field) to stay crisp.
-const LIGHT_OUTLINE = new Set(['rothko']);
+// deep-toned grounds to stay crisp (none currently need it, but keep the hook).
+const LIGHT_OUTLINE = new Set([]);
 function outlineColorFor(id) { return LIGHT_OUTLINE.has(id) ? '#EFE8D8' : '#141414'; }
 
 // Build one finished design: the style's color/texture treatment with the shared
@@ -865,6 +865,17 @@ async function overlaySVG(ctx, inner, w, h, alpha = 1) {
 }
 
 const DECO = {
+  haring: `
+    <g stroke="#141414" stroke-width="1.2" stroke-linecap="round" fill="none">
+      <g transform="translate(15 20)"><line x1="0" y1="-4" x2="0" y2="-9"/><line x1="3.6" y1="-2.6" x2="6.8" y2="-5.8"/><line x1="-3.6" y1="-2.6" x2="-6.8" y2="-5.8"/></g>
+      <g transform="translate(85 18)"><line x1="0" y1="-4" x2="0" y2="-9"/><line x1="3.6" y1="-2.6" x2="6.8" y2="-5.8"/><line x1="-3.6" y1="-2.6" x2="-6.8" y2="-5.8"/></g>
+      <g transform="translate(50 9)"><line x1="0" y1="-4" x2="0" y2="-9"/><line x1="3.6" y1="-2.6" x2="6.8" y2="-5.8"/><line x1="-3.6" y1="-2.6" x2="-6.8" y2="-5.8"/></g>
+      <g transform="translate(9 52)"><line x1="-4" y1="0" x2="-9" y2="0"/><line x1="-2.6" y1="3.6" x2="-5.8" y2="6.8"/><line x1="-2.6" y1="-3.6" x2="-5.8" y2="-6.8"/></g>
+      <g transform="translate(91 55)"><line x1="4" y1="0" x2="9" y2="0"/><line x1="2.6" y1="3.6" x2="5.8" y2="6.8"/><line x1="2.6" y1="-3.6" x2="5.8" y2="-6.8"/></g>
+      <g transform="translate(20 84)"><line x1="0" y1="4" x2="0" y2="9"/><line x1="3.6" y1="2.6" x2="6.8" y2="5.8"/><line x1="-3.6" y1="2.6" x2="-6.8" y2="5.8"/></g>
+      <g transform="translate(80 86)"><line x1="0" y1="4" x2="0" y2="9"/><line x1="3.6" y1="2.6" x2="6.8" y2="5.8"/><line x1="-3.6" y1="2.6" x2="-6.8" y2="5.8"/></g>
+      <g transform="translate(50 92)"><line x1="0" y1="4" x2="0" y2="9"/><line x1="3.6" y1="2.6" x2="6.8" y2="5.8"/><line x1="-3.6" y1="2.6" x2="-6.8" y2="5.8"/></g>
+    </g>`,
   matisse: `
     <path d="M -2 14 q 8 -16 24 -6 q 10 12 -4 22 q -14 8 -22 -2 z" fill="#2A4FB2"/>
     <g transform="translate(84 82)"><circle r="11" fill="#F2A93B"/><circle r="7" fill="#F1ECE2"/><circle r="4" fill="#F2A93B"/></g>
@@ -986,23 +997,13 @@ async function clientStyleFilter(cleanedDataURL, styleId, { maxDim = 1024 } = {}
       snapToPalette(ctx, w, h, ['#D62828', '#F4C40D', '#1B4FBF', '#F4F0E8', '#0E0E0D']);
       await overlaySVG(ctx, DECO.mondrian, w, h, 1);
       break;
-    case 'rothko': {
-      // a true color field — abstract bands sampled from the drawing's palette
-      const cols = sampleColors(img, 3);
-      const cTop = cols[cols.length - 1], cMid = cols[Math.floor(cols.length / 2)], cBot = cols[0];
-      const tmp = document.createElement('canvas'); tmp.width = w; tmp.height = h;
-      const tctx = tmp.getContext('2d');
-      tctx.fillStyle = shade(cBot, -0.5); tctx.fillRect(0, 0, w, h);
-      let g = tctx.createLinearGradient(0, h * 0.08, 0, h * 0.46);
-      g.addColorStop(0, shade(cTop, 0.18)); g.addColorStop(1, cTop);
-      tctx.fillStyle = g; tctx.fillRect(w * 0.06, h * 0.08, w * 0.88, h * 0.36);
-      g = tctx.createLinearGradient(0, h * 0.52, 0, h * 0.92);
-      g.addColorStop(0, cMid); g.addColorStop(1, shade(cBot, -0.25));
-      tctx.fillStyle = g; tctx.fillRect(w * 0.06, h * 0.52, w * 0.88, h * 0.4);
-      ctx.filter = `blur(${Math.round(Math.max(w, h) / 22)}px)`;
-      ctx.drawImage(tmp, 0, 0); ctx.filter = 'none';
+    case 'haring':
+      // flat electric color on a vivid ground + radiating energy lines
+      ctx.filter = 'saturate(1.5) contrast(1.25)';
+      ctx.drawImage(src, 0, 0); ctx.filter = 'none';
+      snapToPalette(ctx, w, h, ['#E6352B', '#1B6FD6', '#12A150', '#F5C518', '#111111']);
+      await overlaySVG(ctx, DECO.haring, w, h, 1);
       break;
-    }
     case 'hockney':
       ctx.filter = 'saturate(1.7) contrast(1.12) brightness(1.05)';
       ctx.drawImage(src, 0, 0); ctx.filter = 'none';
@@ -1100,7 +1101,7 @@ async function fallbackAsset(cleanedDataURL, styleId) {
 // ─── Processing ─────────────────────────────────────────────────────────────
 const WORKER_URL = 'https://mantel-ai.jordanbmcgowen.workers.dev';
 
-const STYLE_IDS = ['pure','matisse','rothko','hockney','basquiat','miro','warhol','klee','mondrian','picasso'];
+const STYLE_IDS = ['pure','matisse','haring','hockney','basquiat','miro','warhol','klee','mondrian','picasso'];
 
 // How many AI styles to render at once. The worker fans out to OpenAI; 3 wide
 // stays under the account's per-minute rate limit (4 wide drew sporadic 429s)
